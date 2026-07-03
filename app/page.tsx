@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { trackEvent } from "@/lib/analytics";
 
 const NAV = [
   { label: "Platform", href: "#platform" },
@@ -20,21 +21,41 @@ function ArrowIcon() {
   );
 }
 
+function LogoMark({ className = "w-5 h-5" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 32 32" fill="none" aria-hidden>
+      <circle cx="16" cy="16" r="11" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M9 22C12.5 13 19.5 9 25 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M6 16H26" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="16" cy="16" r="2.2" fill="currentColor" />
+    </svg>
+  );
+}
+
 function GhostButton({
   children,
   href,
   onClick,
+  eventName,
+  eventProps,
 }: {
   children: React.ReactNode;
   href?: string;
   onClick?: () => void;
+  eventName?: string;
+  eventProps?: Record<string, string>;
 }) {
   const className =
     "inline-flex items-center justify-center w-full sm:w-auto px-6 py-3.5 sm:py-3 text-[11px] font-medium tracking-[0.18em] uppercase border border-white/80 hover:bg-white hover:text-black transition-all duration-300";
 
+  const handleClick = () => {
+    if (eventName) trackEvent(eventName, eventProps);
+    onClick?.();
+  };
+
   if (href) {
     return (
-      <a href={href} className={className}>
+      <a href={href} onClick={handleClick} className={className}>
         {children}
         <ArrowIcon />
       </a>
@@ -42,7 +63,7 @@ function GhostButton({
   }
 
   return (
-    <button type="button" onClick={onClick} className={className}>
+    <button type="button" onClick={handleClick} className={className}>
       {children}
       <ArrowIcon />
     </button>
@@ -149,8 +170,11 @@ function Nav() {
   return (
     <header className="fixed top-0 inset-x-0 z-50 bg-black/40 backdrop-blur-md border-b border-white/5 pt-[env(safe-area-inset-top)]">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
-        <a href="#" className="text-[11px] sm:text-[13px] font-semibold tracking-[0.22em] sm:tracking-[0.35em] uppercase">
-          Operadroom
+        <a href="#" className="flex items-center gap-2.5 sm:gap-3 group">
+          <LogoMark className="w-4 h-4 sm:w-5 sm:h-5 text-white/90 group-hover:text-white transition-colors" />
+          <span className="text-[11px] sm:text-[13px] font-semibold tracking-[0.22em] sm:tracking-[0.35em] uppercase">
+            Operadroom
+          </span>
         </a>
 
         <nav className="hidden md:flex items-center gap-10">
@@ -158,6 +182,7 @@ function Nav() {
             <a
               key={label}
               href={href}
+              onClick={() => trackEvent("nav_click", { section: label.toLowerCase().replace(" ", "_") })}
               className="text-[11px] font-medium tracking-[0.16em] uppercase text-white/70 hover:text-white transition-colors"
             >
               {label}
@@ -181,7 +206,10 @@ function Nav() {
             <a
               key={label}
               href={href}
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                setOpen(false);
+                trackEvent("nav_click", { section: label.toLowerCase().replace(" ", "_"), device: "mobile" });
+              }}
               className="block text-[11px] tracking-[0.16em] uppercase text-white/70"
             >
               {label}
@@ -204,7 +232,7 @@ function HeroSection() {
 
       <div className="relative z-10 w-full max-w-[1400px] mx-auto px-4 sm:px-6 pb-16 sm:pb-24 pt-28 sm:pt-32 md:pb-32">
         <p className="text-[10px] sm:text-[11px] tracking-[0.18em] sm:tracking-[0.22em] uppercase text-white/50 mb-4 sm:mb-5 animate-fade-up">
-          A Reelin AI Company
+          A Reelin AI Product
         </p>
         <h1 className="text-[clamp(1.75rem,8vw,4.25rem)] font-bold leading-[1.08] sm:leading-[1.05] tracking-tight max-w-3xl uppercase animate-fade-up-delay">
           From Predictive Alert to Completed Work Order
@@ -215,8 +243,12 @@ function HeroSection() {
           workflows across your ERP — in seconds, not days.
         </p>
         <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row gap-3 sm:gap-4 animate-fade-up-delay-2">
-          <GhostButton href="#pilot">Request Pilot</GhostButton>
-          <GhostButton href="#platform">Explore Platform</GhostButton>
+          <GhostButton href="#pilot" eventName="cta_click" eventProps={{ action: "request_pilot", location: "hero" }}>
+            Request Pilot
+          </GhostButton>
+          <GhostButton href="#platform" eventName="cta_click" eventProps={{ action: "explore_platform", location: "hero" }}>
+            Explore Platform
+          </GhostButton>
         </div>
       </div>
     </section>
@@ -423,6 +455,7 @@ function PilotSection() {
         <div className="mt-8 sm:mt-10">
           <a
             href={CONTACT_MAILTO}
+            onClick={() => trackEvent("contact_click", { location: "pilot_section", type: "enterprise_sales" })}
             className="inline-flex items-center justify-center w-full sm:w-auto px-6 py-3.5 sm:py-3 text-[11px] font-medium tracking-[0.18em] uppercase border border-white/80 hover:bg-white hover:text-black transition-all duration-300"
           >
             Contact Enterprise Sales
@@ -439,14 +472,27 @@ function Footer() {
     <footer className="border-t border-white/5 py-10 sm:py-12 pb-[calc(2.5rem+env(safe-area-inset-bottom))]">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
         <div>
-          <p className="text-[12px] font-semibold tracking-[0.3em] uppercase">Operadroom</p>
-          <p className="mt-2 text-[12px] text-white/40">A Reelin AI company</p>
+          <div className="flex items-center gap-2.5">
+            <LogoMark className="w-4 h-4 text-white/70" />
+            <p className="text-[12px] font-semibold tracking-[0.3em] uppercase">Operadroom</p>
+          </div>
+          <p className="mt-2 text-[12px] text-white/40">A Reelin AI product</p>
         </div>
         <div className="flex flex-wrap gap-8 text-[11px] tracking-[0.14em] uppercase text-white/45">
-          <a href="https://reelin.ai" className="hover:text-white transition-colors" target="_blank" rel="noopener noreferrer">
+          <a
+            href="https://reelin.ai"
+            onClick={() => trackEvent("outbound_click", { destination: "reelin_ai" })}
+            className="hover:text-white transition-colors"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             Reelin AI
           </a>
-          <a href={CONTACT_MAILTO} className="hover:text-white transition-colors">
+          <a
+            href={CONTACT_MAILTO}
+            onClick={() => trackEvent("contact_click", { location: "footer", type: "general" })}
+            className="hover:text-white transition-colors"
+          >
             Contact
           </a>
         </div>
