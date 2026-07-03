@@ -46,6 +46,68 @@ function GhostButton({
   );
 }
 
+function ImagePanel({
+  src,
+  alt = "",
+  overlay = "dark",
+  className = "",
+}: {
+  src: string;
+  alt?: string;
+  overlay?: "dark" | "light" | "none";
+  className?: string;
+}) {
+  const overlayClass =
+    overlay === "dark"
+      ? "bg-gradient-to-t from-black/60 via-black/10 to-black/20"
+      : overlay === "light"
+        ? "bg-gradient-to-t from-black/40 via-transparent to-transparent"
+        : "";
+
+  return (
+    <div
+      className={`relative overflow-hidden border border-white/10 bg-black ${className}`}
+      role="img"
+      aria-label={alt}
+    >
+      <div
+        className="absolute inset-0 bg-cover bg-center scale-105 transition-transform duration-700 hover:scale-110"
+        style={{ backgroundImage: `url('${src}')` }}
+      />
+      {overlay !== "none" && <div className={`absolute inset-0 ${overlayClass}`} />}
+    </div>
+  );
+}
+
+function FullBleedBanner({
+  src,
+  label,
+  title,
+  body,
+}: {
+  src: string;
+  label: string;
+  title: string;
+  body: string;
+}) {
+  return (
+    <section className="relative min-h-[55vh] flex items-center border-t border-white/5 overflow-hidden">
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url('${src}')` }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-r from-black via-black/85 to-black/50" />
+      <div className="relative z-10 max-w-[1400px] mx-auto px-6 py-20 w-full">
+        <p className="text-[11px] tracking-[0.22em] uppercase text-white/45 mb-4">{label}</p>
+        <h2 className="text-[clamp(1.5rem,3.5vw,2.5rem)] font-bold uppercase tracking-tight max-w-xl">
+          {title}
+        </h2>
+        <p className="mt-5 text-[15px] text-white/60 max-w-lg leading-relaxed">{body}</p>
+      </div>
+    </section>
+  );
+}
+
 function Nav() {
   const [open, setOpen] = useState(false);
 
@@ -102,13 +164,10 @@ function HeroSection() {
       <div className="absolute inset-0">
         <div
           className="hero-media absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{
-            backgroundImage: "url('/images/hero-offshore.jpg')",
-          }}
+          style={{ backgroundImage: "url('/images/industrial-workers.jpg')" }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/25" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/35 to-transparent" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_20%,rgba(255,255,255,0.06),transparent_50%)]" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/40 to-transparent" />
       </div>
 
       <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 pb-24 pt-32 md:pb-32">
@@ -196,19 +255,24 @@ function FlowDiagram() {
 
 function ArchitectureVisual() {
   return (
-    <div className="relative aspect-[4/3] border border-white/10 bg-gradient-to-br from-white/[0.04] to-transparent overflow-hidden">
+    <div className="relative aspect-[4/3] border border-white/10 overflow-hidden">
+      <div
+        className="absolute inset-0 bg-cover bg-center opacity-25"
+        style={{ backgroundImage: "url('/images/data-network.jpg')" }}
+      />
+      <div className="absolute inset-0 bg-black/60" />
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:32px_32px]" />
-      <div className="absolute inset-0 flex flex-col justify-center px-8 gap-4 text-[11px] tracking-wider uppercase">
-        <div className="border border-white/15 px-4 py-3 text-white/70">Digital Twin / IoT</div>
+      <div className="relative z-10 h-full flex flex-col justify-center px-8 gap-4 text-[11px] tracking-wider uppercase">
+        <div className="border border-white/15 px-4 py-3 text-white/70 bg-black/40">Digital Twin / IoT</div>
         <div className="text-center text-white/30">↓</div>
-        <div className="border border-white/30 px-4 py-3 bg-white/[0.06] font-semibold">Operadroom Agent</div>
+        <div className="border border-white/30 px-4 py-3 bg-white/[0.08] font-semibold">Operadroom Agent</div>
         <div className="text-center text-white/30">↓</div>
         <div className="grid grid-cols-2 gap-2">
-          <div className="border border-white/15 px-3 py-2 text-white/50">SAP / ERP</div>
-          <div className="border border-white/15 px-3 py-2 text-white/50">CMMS</div>
+          <div className="border border-white/15 px-3 py-2 text-white/50 bg-black/30">SAP / ERP</div>
+          <div className="border border-white/15 px-3 py-2 text-white/50 bg-black/30">CMMS</div>
         </div>
         <div className="text-center text-white/30">↓</div>
-        <div className="border border-dashed border-white/20 px-4 py-3 text-white/45">
+        <div className="border border-dashed border-white/20 px-4 py-3 text-white/45 bg-black/20">
           Human Sign-Off
         </div>
       </div>
@@ -221,14 +285,17 @@ function UseCasesSection() {
     {
       title: "Closed-Loop Work Orders",
       desc: "Cut the hours between a predictive failure alert and a mobilized maintenance response.",
+      image: "/images/machinery.jpg",
     },
     {
       title: "Institutional Memory",
       desc: "Preserve senior engineer decision logic before retirement. Query it against live asset data.",
+      image: "/images/factory-floor.jpg",
     },
     {
       title: "Executive Decision Support",
       desc: "Run what-if scenarios on live telemetry. Deliver board-ready risk memos in minutes.",
+      image: "/images/hero-offshore.jpg",
     },
   ];
 
@@ -241,9 +308,18 @@ function UseCasesSection() {
         </h2>
         <div className="mt-16 grid md:grid-cols-3 gap-px bg-white/10">
           {cases.map((c) => (
-            <div key={c.title} className="bg-black p-8 md:p-10">
-              <h3 className="text-[14px] font-semibold tracking-wide uppercase">{c.title}</h3>
-              <p className="mt-4 text-[14px] text-white/55 leading-relaxed">{c.desc}</p>
+            <div key={c.title} className="bg-black group">
+              <div className="relative h-44 overflow-hidden">
+                <div
+                  className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+                  style={{ backgroundImage: `url('${c.image}')` }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
+              </div>
+              <div className="p-8 md:p-10">
+                <h3 className="text-[14px] font-semibold tracking-wide uppercase">{c.title}</h3>
+                <p className="mt-4 text-[14px] text-white/55 leading-relaxed">{c.desc}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -273,8 +349,14 @@ function SecuritySection() {
   ];
 
   return (
-    <section id="security" className="border-t border-white/5 bg-white/[0.02]">
-      <div className="max-w-[1400px] mx-auto px-6 py-24">
+    <section id="security" className="relative border-t border-white/5 overflow-hidden">
+      <div
+        className="absolute inset-0 bg-cover bg-center opacity-20"
+        style={{ backgroundImage: "url('/images/data-center.jpg')" }}
+      />
+      <div className="absolute inset-0 bg-black/85" />
+
+      <div className="relative z-10 max-w-[1400px] mx-auto px-6 py-24">
         <p className="text-[11px] tracking-[0.22em] uppercase text-white/45 mb-4">Security</p>
         <h2 className="text-[clamp(1.75rem,4vw,3rem)] font-bold uppercase tracking-tight max-w-3xl">
           Enterprise-Grade Isolation. Your Data Never Trains Our Models.
@@ -285,7 +367,7 @@ function SecuritySection() {
         </p>
         <div className="mt-14 grid sm:grid-cols-2 gap-px bg-white/10">
           {items.map((item) => (
-            <div key={item.title} className="bg-[#0a0a0a] p-8">
+            <div key={item.title} className="bg-black/80 backdrop-blur-sm p-8 border border-white/5">
               <h3 className="text-[13px] font-semibold tracking-wide uppercase">{item.title}</h3>
               <p className="mt-3 text-[14px] text-white/50 leading-relaxed">{item.desc}</p>
             </div>
@@ -300,12 +382,10 @@ function PilotSection() {
   return (
     <section id="pilot" className="relative min-h-[70vh] flex items-center border-t border-white/5 overflow-hidden">
       <div
-        className="absolute inset-0 bg-cover bg-center opacity-35 scale-105"
-        style={{
-          backgroundImage: "url('/images/oil-refinery.webp')",
-        }}
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: "url('/images/oil-refinery.webp')" }}
       />
-      <div className="absolute inset-0 bg-gradient-to-r from-black via-black/90 to-black/60" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black via-black/88 to-black/55" />
 
       <div className="relative z-10 max-w-[1400px] mx-auto px-6 py-24 w-full">
         <p className="text-[11px] tracking-[0.22em] uppercase text-white/45 mb-4">Pilot Program</p>
@@ -367,11 +447,10 @@ export default function Home() {
           title="Digital Twins See Everything. Humans Still Move the Data."
           body="Industrial organizations have invested billions in real-time asset monitoring. When a sensor flags critical vibration or pressure drift, the alert is instant — but engineers still spend hours searching manuals, checking inventory, and filing tickets across siloed systems."
           visual={
-            <div
-              className="aspect-[4/3] bg-cover bg-center border border-white/10"
-              style={{
-                backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.45), rgba(0,0,0,0.05)), url('/images/oil-refinery.webp')`,
-              }}
+            <ImagePanel
+              src="/images/oil-refinery.webp"
+              alt="Aerial view of an oil refinery complex"
+              className="aspect-[4/3]"
             />
           }
         />
@@ -380,7 +459,16 @@ export default function Home() {
           title="Autonomous Agents Between Twin and ERP"
           body="Operadroom ports the same agent architecture proven in Swiftdroom — read, reason, act across platforms — onto industrial maintenance workflows. Predictive monitoring becomes closed-loop digital execution."
           reverse
-          visual={<FlowDiagram />}
+          visual={
+            <div className="space-y-4">
+              <ImagePanel
+                src="/images/factory-floor.jpg"
+                alt="Industrial engineer inspecting turbine equipment"
+                className="aspect-[16/9]"
+              />
+              <FlowDiagram />
+            </div>
+          }
         />
         <SplitSection
           label="Architecture"
@@ -388,8 +476,20 @@ export default function Home() {
           body="Operadroom runs alongside Siemens, SAP, Aveva, Cognite, and IBM Maximo. We handle the connective tissue: translating live telemetry into spec'd maintenance actions with full audit trails via Reelin ID."
           visual={<ArchitectureVisual />}
         />
+        <FullBleedBanner
+          src="/images/iot-sensors.jpg"
+          label="The Connective Layer"
+          title="Digital Steel Meets Cognitive Execution"
+          body="Industrial twins monitor physical assets. Operadroom agents move data between systems, parse engineering context, and execute workflows — closing the loop your dashboards leave open."
+        />
         <UseCasesSection />
         <SecuritySection />
+        <FullBleedBanner
+          src="/images/energy-solar.jpg"
+          label="Energy & Heavy Industry"
+          title="Built for Assets That Cannot Fail"
+          body="From refineries and chemical plants to upstream platforms and renewable infrastructure — Operadroom scales across any facility running predictive asset monitoring."
+        />
         <PilotSection />
       </main>
       <Footer />
