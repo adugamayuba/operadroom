@@ -98,22 +98,22 @@ function Nav() {
 
 function HeroSection() {
   return (
-    <section className="relative min-h-screen flex items-end">
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: `
-            linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.55) 45%, rgba(0,0,0,0.35) 100%),
-            linear-gradient(to right, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.2) 60%),
-            url('https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&w=2400&q=80')
-          `,
-        }}
-      />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_30%,rgba(255,255,255,0.04),transparent_55%)]" />
+    <section className="relative min-h-screen flex items-end overflow-hidden">
+      <div className="absolute inset-0">
+        <div
+          className="hero-media absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: "url('/images/hero-offshore.jpg')",
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/25" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/35 to-transparent" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_20%,rgba(255,255,255,0.06),transparent_50%)]" />
+      </div>
 
       <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 pb-24 pt-32 md:pb-32">
         <p className="text-[11px] tracking-[0.22em] uppercase text-white/50 mb-5 animate-fade-up">
-          A Softdroom Holdings Company · Powered by Reelin ID
+          A Reelin AI Company
         </p>
         <h1 className="text-[clamp(2rem,5.5vw,4.25rem)] font-bold leading-[1.05] tracking-tight max-w-3xl uppercase animate-fade-up-delay">
           From Predictive Alert to Completed Work Order
@@ -298,11 +298,11 @@ function SecuritySection() {
 
 function PilotSection() {
   return (
-    <section id="pilot" className="relative min-h-[70vh] flex items-center border-t border-white/5">
+    <section id="pilot" className="relative min-h-[70vh] flex items-center border-t border-white/5 overflow-hidden">
       <div
-        className="absolute inset-0 bg-cover bg-center opacity-30"
+        className="absolute inset-0 bg-cover bg-center opacity-35 scale-105"
         style={{
-          backgroundImage: `url('https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=2400&q=80')`,
+          backgroundImage: "url('/images/oil-refinery.webp')",
         }}
       />
       <div className="absolute inset-0 bg-gradient-to-r from-black via-black/90 to-black/60" />
@@ -340,16 +340,11 @@ function Footer() {
       <div className="max-w-[1400px] mx-auto px-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
         <div>
           <p className="text-[12px] font-semibold tracking-[0.3em] uppercase">Operadroom</p>
-          <p className="mt-2 text-[12px] text-white/40">
-            A subsidiary of Softdroom Holdings · Powered by Reelin ID
-          </p>
+          <p className="mt-2 text-[12px] text-white/40">A Reelin AI company</p>
         </div>
         <div className="flex flex-wrap gap-8 text-[11px] tracking-[0.14em] uppercase text-white/45">
           <a href="https://reelin.ai" className="hover:text-white transition-colors" target="_blank" rel="noopener noreferrer">
             Reelin AI
-          </a>
-          <a href="https://swiftdroom.com" className="hover:text-white transition-colors" target="_blank" rel="noopener noreferrer">
-            Swiftdroom
           </a>
           <a href="mailto:abel@reelin.ai" className="hover:text-white transition-colors">
             Contact
@@ -375,7 +370,7 @@ export default function Home() {
             <div
               className="aspect-[4/3] bg-cover bg-center border border-white/10"
               style={{
-                backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.5), rgba(0,0,0,0.1)), url('https://images.unsplash.com/photo-1565514020179-026bfc7a287c?auto=format&fit=crop&w=1200&q=80')`,
+                backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.45), rgba(0,0,0,0.05)), url('/images/oil-refinery.webp')`,
               }}
             />
           }
