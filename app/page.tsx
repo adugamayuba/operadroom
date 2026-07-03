@@ -75,12 +75,14 @@ function ImagePanel({
   overlay = "dark",
   className = "",
   animate = true,
+  frame = "editorial",
 }: {
   src: string;
   alt?: string;
   overlay?: "dark" | "light" | "none";
   className?: string;
   animate?: boolean;
+  frame?: "editorial" | "soft" | "none";
 }) {
   const overlayClass =
     overlay === "dark"
@@ -89,9 +91,16 @@ function ImagePanel({
         ? "bg-gradient-to-t from-black/40 via-transparent to-transparent"
         : "";
 
+  const frameClass =
+    frame === "editorial"
+      ? "rounded-[1.35rem] sm:rounded-[1.75rem] rounded-tr-[2.75rem] sm:rounded-tr-[4.5rem] rounded-bl-[2rem] sm:rounded-bl-[3.25rem] rounded-tl-md rounded-br-md shadow-[0_28px_90px_rgba(0,0,0,0.42)] lg:-rotate-1 lg:origin-center"
+      : frame === "soft"
+        ? "rounded-xl sm:rounded-2xl"
+        : "";
+
   return (
     <div
-      className={`relative overflow-hidden border border-white/10 bg-black ${className}`}
+      className={`relative overflow-hidden border border-white/10 bg-black ${frameClass} ${className}`}
       role="img"
       aria-label={alt}
     >
@@ -278,7 +287,7 @@ function FlowDiagram() {
 
 function ArchitectureVisual() {
   return (
-    <div className="relative aspect-[4/3] border border-white/10 overflow-hidden">
+    <div className="relative aspect-[4/3] sm:aspect-[16/11] border border-white/10 overflow-hidden rounded-[1.35rem] sm:rounded-[1.75rem] rounded-tl-[2.5rem] sm:rounded-tl-[3.5rem] rounded-br-[2rem] sm:rounded-br-[3rem] rounded-tr-md rounded-bl-md shadow-[0_28px_90px_rgba(0,0,0,0.42)] lg:rotate-1 lg:origin-center">
       <KenBurnsBg src="/images/data-network.jpg" speed="slow" />
       <div className="absolute inset-0 bg-black/60 z-[1]" />
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:32px_32px] z-[2]" />
@@ -328,8 +337,8 @@ function UseCasesSection() {
         </h2>
         <div className="mt-10 sm:mt-16 grid sm:grid-cols-2 lg:grid-cols-3 gap-px bg-white/10">
           {cases.map((c, i) => (
-            <div key={c.title} className="bg-black group overflow-hidden">
-              <div className="relative h-40 sm:h-44 overflow-hidden">
+            <div key={c.title} className="bg-black group overflow-hidden rounded-sm sm:rounded-md">
+              <div className="relative h-40 sm:h-44 overflow-hidden rounded-tl-2xl rounded-tr-md rounded-bl-md rounded-br-3xl sm:rounded-br-[3.5rem] mx-3 mt-3 sm:mx-4 sm:mt-4">
                 <div
                   className={`ken-burns-layer ken-burns-medium ${i === 1 ? "ken-burns-slow" : ""}`}
                   style={{ backgroundImage: `url('${c.image}')`, animationDelay: `${i * 2}s` }}
@@ -461,7 +470,7 @@ export default function Home() {
             <ImagePanel
               src="/images/oil-refinery.webp"
               alt="Aerial view of an oil refinery complex"
-              className="aspect-[4/3]"
+              className="aspect-[4/5] sm:aspect-[16/11] lg:aspect-[5/4] w-full max-w-lg lg:ml-auto"
             />
           }
         />
@@ -475,7 +484,8 @@ export default function Home() {
               <ImagePanel
                 src="/images/factory-floor.jpg"
                 alt="Industrial engineer inspecting turbine equipment"
-                className="aspect-[16/9]"
+                className="aspect-[4/5] sm:aspect-[16/10] w-full max-w-lg lg:mr-auto lg:rotate-1"
+                frame="editorial"
               />
               <FlowDiagram />
             </div>
