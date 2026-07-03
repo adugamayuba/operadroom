@@ -27,4 +27,4 @@ Deploy to Vercel and connect `operadroom.com`.
 
 ## Contact
 
-Enterprise pilot inquiries: abel@reelin.ai
+Enterprise pilot inquiries: hi@reelin.ai

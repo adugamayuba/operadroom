@@ -9,7 +9,7 @@ const NAV = [
   { label: "Pilot", href: "#pilot" },
 ];
 
-const CONTACT_EMAIL = "abel@reelin.ai";
+const CONTACT_EMAIL = "hi@reelin.ai";
 const CONTACT_MAILTO = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Operadroom Inquiry")}&body=${encodeURIComponent("Hi,\n\nI'm interested in learning more about Operadroom.\n\n")}`;
 
 function ArrowIcon() {
