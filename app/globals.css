@@ -14,6 +14,7 @@ body {
   background: #000;
   color: #fff;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
 ::selection {
@@ -25,12 +26,58 @@ body {
     transform: scale(1);
   }
   to {
+    transform: scale(1.12);
+  }
+}
+
+@keyframes ken-burns-subtle {
+  from {
+    transform: scale(1);
+  }
+  to {
     transform: scale(1.08);
   }
 }
 
-.hero-media {
-  animation: ken-burns 24s ease-in-out infinite alternate;
+@keyframes ken-burns-hero {
+  from {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.14) translate3d(-1.5%, -1%, 0);
+  }
+}
+
+.ken-burns-layer {
+  position: absolute;
+  inset: -10%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  will-change: transform;
+}
+
+.ken-burns-hero {
+  animation: ken-burns-hero 28s ease-in-out infinite alternate;
+}
+
+.ken-burns-slow {
+  animation: ken-burns 22s ease-in-out infinite alternate;
+}
+
+.ken-burns-medium {
+  animation: ken-burns-subtle 18s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ken-burns-hero,
+  .ken-burns-slow,
+  .ken-burns-medium,
+  .animate-fade-up,
+  .animate-fade-up-delay,
+  .animate-fade-up-delay-2 {
+    animation: none !important;
+  }
 }
 
 @keyframes fade-up {

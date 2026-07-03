@@ -30,7 +30,7 @@ function GhostButton({
   onClick?: () => void;
 }) {
   const className =
-    "inline-flex items-center px-6 py-3 text-[11px] font-medium tracking-[0.18em] uppercase border border-white/80 hover:bg-white hover:text-black transition-all duration-300";
+    "inline-flex items-center justify-center w-full sm:w-auto px-6 py-3.5 sm:py-3 text-[11px] font-medium tracking-[0.18em] uppercase border border-white/80 hover:bg-white hover:text-black transition-all duration-300";
 
   if (href) {
     return (
@@ -49,16 +49,38 @@ function GhostButton({
   );
 }
 
+function KenBurnsBg({
+  src,
+  speed = "slow",
+}: {
+  src: string;
+  speed?: "hero" | "slow" | "medium";
+}) {
+  const speedClass =
+    speed === "hero" ? "ken-burns-hero" : speed === "medium" ? "ken-burns-medium" : "ken-burns-slow";
+
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      <div
+        className={`ken-burns-layer ${speedClass}`}
+        style={{ backgroundImage: `url('${src}')` }}
+      />
+    </div>
+  );
+}
+
 function ImagePanel({
   src,
   alt = "",
   overlay = "dark",
   className = "",
+  animate = true,
 }: {
   src: string;
   alt?: string;
   overlay?: "dark" | "light" | "none";
   className?: string;
+  animate?: boolean;
 }) {
   const overlayClass =
     overlay === "dark"
@@ -73,11 +95,15 @@ function ImagePanel({
       role="img"
       aria-label={alt}
     >
-      <div
-        className="absolute inset-0 bg-cover bg-center scale-105 transition-transform duration-700 hover:scale-110"
-        style={{ backgroundImage: `url('${src}')` }}
-      />
-      {overlay !== "none" && <div className={`absolute inset-0 ${overlayClass}`} />}
+      {animate ? (
+        <KenBurnsBg src={src} speed="medium" />
+      ) : (
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url('${src}')` }}
+        />
+      )}
+      {overlay !== "none" && <div className={`absolute inset-0 z-[1] ${overlayClass}`} />}
     </div>
   );
 }
@@ -94,18 +120,15 @@ function FullBleedBanner({
   body: string;
 }) {
   return (
-    <section className="relative min-h-[55vh] flex items-center border-t border-white/5 overflow-hidden">
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url('${src}')` }}
-      />
+    <section className="relative min-h-[45vh] sm:min-h-[55vh] flex items-center border-t border-white/5 overflow-hidden">
+      <KenBurnsBg src={src} speed="slow" />
       <div className="absolute inset-0 bg-gradient-to-r from-black via-black/85 to-black/50" />
-      <div className="relative z-10 max-w-[1400px] mx-auto px-6 py-20 w-full">
-        <p className="text-[11px] tracking-[0.22em] uppercase text-white/45 mb-4">{label}</p>
-        <h2 className="text-[clamp(1.5rem,3.5vw,2.5rem)] font-bold uppercase tracking-tight max-w-xl">
+      <div className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-6 py-14 sm:py-20 w-full">
+        <p className="text-[10px] sm:text-[11px] tracking-[0.18em] sm:tracking-[0.22em] uppercase text-white/45 mb-3 sm:mb-4">{label}</p>
+        <h2 className="text-[clamp(1.35rem,5vw,2.5rem)] font-bold uppercase tracking-tight max-w-xl">
           {title}
         </h2>
-        <p className="mt-5 text-[15px] text-white/60 max-w-lg leading-relaxed">{body}</p>
+        <p className="mt-4 sm:mt-5 text-[14px] sm:text-[15px] text-white/60 max-w-lg leading-relaxed">{body}</p>
       </div>
     </section>
   );
@@ -115,9 +138,9 @@ function Nav() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="fixed top-0 inset-x-0 z-50 bg-black/40 backdrop-blur-md border-b border-white/5">
-      <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
-        <a href="#" className="text-[13px] font-semibold tracking-[0.35em] uppercase">
+    <header className="fixed top-0 inset-x-0 z-50 bg-black/40 backdrop-blur-md border-b border-white/5 pt-[env(safe-area-inset-top)]">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
+        <a href="#" className="text-[11px] sm:text-[13px] font-semibold tracking-[0.22em] sm:tracking-[0.35em] uppercase">
           Operadroom
         </a>
 
@@ -163,29 +186,26 @@ function Nav() {
 
 function HeroSection() {
   return (
-    <section className="relative min-h-screen flex items-end overflow-hidden">
+    <section className="relative min-h-[100svh] flex items-end overflow-hidden">
       <div className="absolute inset-0">
-        <div
-          className="hero-media absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: "url('/images/hero-offshore.jpg')" }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/40 to-transparent" />
+        <KenBurnsBg src="/images/hero-offshore.jpg" speed="hero" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/65 to-black/35" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/45 to-transparent sm:from-black/85 sm:via-black/40" />
       </div>
 
-      <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 pb-24 pt-32 md:pb-32">
-        <p className="text-[11px] tracking-[0.22em] uppercase text-white/50 mb-5 animate-fade-up">
+      <div className="relative z-10 w-full max-w-[1400px] mx-auto px-4 sm:px-6 pb-16 sm:pb-24 pt-28 sm:pt-32 md:pb-32">
+        <p className="text-[10px] sm:text-[11px] tracking-[0.18em] sm:tracking-[0.22em] uppercase text-white/50 mb-4 sm:mb-5 animate-fade-up">
           A Reelin AI Company
         </p>
-        <h1 className="text-[clamp(2rem,5.5vw,4.25rem)] font-bold leading-[1.05] tracking-tight max-w-3xl uppercase animate-fade-up-delay">
+        <h1 className="text-[clamp(1.75rem,8vw,4.25rem)] font-bold leading-[1.08] sm:leading-[1.05] tracking-tight max-w-3xl uppercase animate-fade-up-delay">
           From Predictive Alert to Completed Work Order
         </h1>
-        <p className="mt-6 text-[15px] md:text-[17px] text-white/65 max-w-xl leading-relaxed animate-fade-up-delay-2">
+        <p className="mt-4 sm:mt-6 text-[14px] sm:text-[15px] md:text-[17px] text-white/65 max-w-xl leading-relaxed animate-fade-up-delay-2">
           Operadroom is the autonomous execution layer for industrial digital twins. When IoT
           flags a failure, our agents diagnose, cross-reference manuals, and draft maintenance
           workflows across your ERP — in seconds, not days.
         </p>
-        <div className="mt-10 flex flex-wrap gap-4 animate-fade-up-delay-2">
+        <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row gap-3 sm:gap-4 animate-fade-up-delay-2">
           <GhostButton href="#pilot">Request Pilot</GhostButton>
           <GhostButton href="#platform">Explore Platform</GhostButton>
         </div>
@@ -210,22 +230,22 @@ function SplitSection({
   visual: React.ReactNode;
 }) {
   return (
-    <section id={id} className="min-h-[85vh] flex items-center border-t border-white/5">
+    <section id={id} className="min-h-0 lg:min-h-[85vh] flex items-center border-t border-white/5">
       <div
-        className={`max-w-[1400px] mx-auto px-6 py-24 grid lg:grid-cols-2 gap-16 items-center w-full ${
+        className={`max-w-[1400px] mx-auto px-4 sm:px-6 py-14 sm:py-20 lg:py-24 grid lg:grid-cols-2 gap-10 sm:gap-12 lg:gap-16 items-center w-full ${
           reverse ? "lg:[&>*:first-child]:order-2" : ""
         }`}
       >
         <div>
-          <p className="text-[11px] tracking-[0.22em] uppercase text-white/45 mb-4">{label}</p>
-          <h2 className="text-[clamp(1.75rem,4vw,3rem)] font-bold uppercase leading-tight tracking-tight">
+          <p className="text-[10px] sm:text-[11px] tracking-[0.18em] sm:tracking-[0.22em] uppercase text-white/45 mb-3 sm:mb-4">{label}</p>
+          <h2 className="text-[clamp(1.5rem,5vw,3rem)] font-bold uppercase leading-tight tracking-tight">
             {title}
           </h2>
-          <p className="mt-6 text-[15px] md:text-[16px] text-white/60 leading-relaxed max-w-lg">
+          <p className="mt-4 sm:mt-6 text-[14px] sm:text-[15px] md:text-[16px] text-white/60 leading-relaxed max-w-lg">
             {body}
           </p>
         </div>
-        <div>{visual}</div>
+        <div className="w-full">{visual}</div>
       </div>
     </section>
   );
@@ -243,13 +263,13 @@ function FlowDiagram() {
       {steps.map((s) => (
         <div
           key={s.n}
-          className="border border-white/10 bg-white/[0.03] p-6 hover:border-white/20 transition-colors"
+          className="border border-white/10 bg-white/[0.03] p-4 sm:p-6 hover:border-white/20 transition-colors"
         >
-          <div className="flex items-baseline gap-4">
+          <div className="flex items-baseline gap-3 sm:gap-4">
             <span className="text-[11px] tracking-[0.2em] text-white/35">{s.n}</span>
-            <h3 className="text-[15px] font-semibold tracking-wide uppercase">{s.title}</h3>
+            <h3 className="text-[13px] sm:text-[15px] font-semibold tracking-wide uppercase">{s.title}</h3>
           </div>
-          <p className="mt-2 ml-10 text-[13px] text-white/50 leading-relaxed">{s.desc}</p>
+          <p className="mt-2 sm:ml-10 text-[12px] sm:text-[13px] text-white/50 leading-relaxed">{s.desc}</p>
         </div>
       ))}
     </div>
@@ -259,13 +279,10 @@ function FlowDiagram() {
 function ArchitectureVisual() {
   return (
     <div className="relative aspect-[4/3] border border-white/10 overflow-hidden">
-      <div
-        className="absolute inset-0 bg-cover bg-center opacity-25"
-        style={{ backgroundImage: "url('/images/data-network.jpg')" }}
-      />
-      <div className="absolute inset-0 bg-black/60" />
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:32px_32px]" />
-      <div className="relative z-10 h-full flex flex-col justify-center px-8 gap-4 text-[11px] tracking-wider uppercase">
+      <KenBurnsBg src="/images/data-network.jpg" speed="slow" />
+      <div className="absolute inset-0 bg-black/60 z-[1]" />
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:32px_32px] z-[2]" />
+      <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-8 gap-3 sm:gap-4 text-[10px] sm:text-[11px] tracking-wider uppercase">
         <div className="border border-white/15 px-4 py-3 text-white/70 bg-black/40">Digital Twin / IoT</div>
         <div className="text-center text-white/30">↓</div>
         <div className="border border-white/30 px-4 py-3 bg-white/[0.08] font-semibold">Operadroom Agent</div>
@@ -304,24 +321,24 @@ function UseCasesSection() {
 
   return (
     <section id="use-cases" className="border-t border-white/5">
-      <div className="max-w-[1400px] mx-auto px-6 py-24">
-        <p className="text-[11px] tracking-[0.22em] uppercase text-white/45 mb-4">Use Cases</p>
-        <h2 className="text-[clamp(1.75rem,4vw,3rem)] font-bold uppercase tracking-tight max-w-2xl">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-14 sm:py-20 lg:py-24">
+        <p className="text-[10px] sm:text-[11px] tracking-[0.18em] sm:tracking-[0.22em] uppercase text-white/45 mb-3 sm:mb-4">Use Cases</p>
+        <h2 className="text-[clamp(1.5rem,5vw,3rem)] font-bold uppercase tracking-tight max-w-2xl">
           Bridging Digital Steel and Cognitive Execution
         </h2>
-        <div className="mt-16 grid md:grid-cols-3 gap-px bg-white/10">
-          {cases.map((c) => (
-            <div key={c.title} className="bg-black group">
-              <div className="relative h-44 overflow-hidden">
+        <div className="mt-10 sm:mt-16 grid sm:grid-cols-2 lg:grid-cols-3 gap-px bg-white/10">
+          {cases.map((c, i) => (
+            <div key={c.title} className="bg-black group overflow-hidden">
+              <div className="relative h-40 sm:h-44 overflow-hidden">
                 <div
-                  className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-                  style={{ backgroundImage: `url('${c.image}')` }}
+                  className={`ken-burns-layer ken-burns-medium ${i === 1 ? "ken-burns-slow" : ""}`}
+                  style={{ backgroundImage: `url('${c.image}')`, animationDelay: `${i * 2}s` }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
+                <div className="absolute inset-0 z-[1] bg-gradient-to-t from-black via-black/30 to-transparent" />
               </div>
-              <div className="p-8 md:p-10">
-                <h3 className="text-[14px] font-semibold tracking-wide uppercase">{c.title}</h3>
-                <p className="mt-4 text-[14px] text-white/55 leading-relaxed">{c.desc}</p>
+              <div className="p-6 sm:p-8 md:p-10">
+                <h3 className="text-[13px] sm:text-[14px] font-semibold tracking-wide uppercase">{c.title}</h3>
+                <p className="mt-3 sm:mt-4 text-[13px] sm:text-[14px] text-white/55 leading-relaxed">{c.desc}</p>
               </div>
             </div>
           ))}
@@ -353,26 +370,23 @@ function SecuritySection() {
 
   return (
     <section id="security" className="relative border-t border-white/5 overflow-hidden">
-      <div
-        className="absolute inset-0 bg-cover bg-center opacity-20"
-        style={{ backgroundImage: "url('/images/data-center.jpg')" }}
-      />
-      <div className="absolute inset-0 bg-black/85" />
+      <KenBurnsBg src="/images/data-center.jpg" speed="slow" />
+      <div className="absolute inset-0 bg-black/85 z-[1]" />
 
-      <div className="relative z-10 max-w-[1400px] mx-auto px-6 py-24">
-        <p className="text-[11px] tracking-[0.22em] uppercase text-white/45 mb-4">Security</p>
-        <h2 className="text-[clamp(1.75rem,4vw,3rem)] font-bold uppercase tracking-tight max-w-3xl">
+      <div className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-6 py-14 sm:py-20 lg:py-24">
+        <p className="text-[10px] sm:text-[11px] tracking-[0.18em] sm:tracking-[0.22em] uppercase text-white/45 mb-3 sm:mb-4">Security</p>
+        <h2 className="text-[clamp(1.5rem,5vw,3rem)] font-bold uppercase tracking-tight max-w-3xl">
           Enterprise-Grade Isolation. Your Data Never Trains Our Models.
         </h2>
-        <p className="mt-6 text-[15px] text-white/55 max-w-2xl leading-relaxed">
+        <p className="mt-4 sm:mt-6 text-[14px] sm:text-[15px] text-white/55 max-w-2xl leading-relaxed">
           Operadroom integrates with your existing OT stack through approved APIs. We do not
           replace Siemens, SAP, or Cognite — we connect them with auditable autonomous agents.
         </p>
-        <div className="mt-14 grid sm:grid-cols-2 gap-px bg-white/10">
+        <div className="mt-10 sm:mt-14 grid grid-cols-1 sm:grid-cols-2 gap-px bg-white/10">
           {items.map((item) => (
-            <div key={item.title} className="bg-black/80 backdrop-blur-sm p-8 border border-white/5">
-              <h3 className="text-[13px] font-semibold tracking-wide uppercase">{item.title}</h3>
-              <p className="mt-3 text-[14px] text-white/50 leading-relaxed">{item.desc}</p>
+            <div key={item.title} className="bg-black/80 backdrop-blur-sm p-6 sm:p-8 border border-white/5">
+              <h3 className="text-[12px] sm:text-[13px] font-semibold tracking-wide uppercase">{item.title}</h3>
+              <p className="mt-2 sm:mt-3 text-[13px] sm:text-[14px] text-white/50 leading-relaxed">{item.desc}</p>
             </div>
           ))}
         </div>
@@ -383,27 +397,24 @@ function SecuritySection() {
 
 function PilotSection() {
   return (
-    <section id="pilot" className="relative min-h-[70vh] flex items-center border-t border-white/5 overflow-hidden">
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: "url('/images/oil-refinery.webp')" }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-r from-black via-black/88 to-black/55" />
+    <section id="pilot" className="relative min-h-[60vh] sm:min-h-[70vh] flex items-center border-t border-white/5 overflow-hidden">
+      <KenBurnsBg src="/images/oil-refinery.webp" speed="slow" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black via-black/88 to-black/55 z-[1]" />
 
-      <div className="relative z-10 max-w-[1400px] mx-auto px-6 py-24 w-full">
-        <p className="text-[11px] tracking-[0.22em] uppercase text-white/45 mb-4">Pilot Program</p>
-        <h2 className="text-[clamp(1.75rem,4vw,3rem)] font-bold uppercase tracking-tight max-w-2xl">
+      <div className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-6 py-14 sm:py-24 w-full">
+        <p className="text-[10px] sm:text-[11px] tracking-[0.18em] sm:tracking-[0.22em] uppercase text-white/45 mb-3 sm:mb-4">Pilot Program</p>
+        <h2 className="text-[clamp(1.5rem,5vw,3rem)] font-bold uppercase tracking-tight max-w-2xl">
           90-Day Facility Proof of Concept
         </h2>
-        <p className="mt-6 text-[15px] text-white/60 max-w-xl leading-relaxed">
+        <p className="mt-4 sm:mt-6 text-[14px] sm:text-[15px] text-white/60 max-w-xl leading-relaxed">
           Start at a single refinery, chemical plant, or upstream asset. Integrate with your
           digital twin data layer. Measure time from alert to draft work order. Scale regionally
           on proven ROI.
         </p>
-        <div className="mt-10">
+        <div className="mt-8 sm:mt-10">
           <a
             href={CONTACT_MAILTO}
-            className="inline-flex items-center px-6 py-3 text-[11px] font-medium tracking-[0.18em] uppercase border border-white/80 hover:bg-white hover:text-black transition-all duration-300"
+            className="inline-flex items-center justify-center w-full sm:w-auto px-6 py-3.5 sm:py-3 text-[11px] font-medium tracking-[0.18em] uppercase border border-white/80 hover:bg-white hover:text-black transition-all duration-300"
           >
             Contact Enterprise Sales
             <ArrowIcon />
@@ -416,8 +427,8 @@ function PilotSection() {
 
 function Footer() {
   return (
-    <footer className="border-t border-white/5 py-12">
-      <div className="max-w-[1400px] mx-auto px-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+    <footer className="border-t border-white/5 py-10 sm:py-12 pb-[calc(2.5rem+env(safe-area-inset-bottom))]">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
         <div>
           <p className="text-[12px] font-semibold tracking-[0.3em] uppercase">Operadroom</p>
           <p className="mt-2 text-[12px] text-white/40">A Reelin AI company</p>
