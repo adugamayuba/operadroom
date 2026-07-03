@@ -9,6 +9,9 @@ const NAV = [
   { label: "Pilot", href: "#pilot" },
 ];
 
+const CONTACT_EMAIL = "abel@reelin.ai";
+const CONTACT_MAILTO = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Operadroom Inquiry")}&body=${encodeURIComponent("Hi,\n\nI'm interested in learning more about Operadroom.\n\n")}`;
+
 function ArrowIcon() {
   return (
     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden className="ml-2">
@@ -164,7 +167,7 @@ function HeroSection() {
       <div className="absolute inset-0">
         <div
           className="hero-media absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: "url('/images/industrial-workers.jpg')" }}
+          style={{ backgroundImage: "url('/images/hero-offshore.jpg')" }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/40 to-transparent" />
@@ -295,7 +298,7 @@ function UseCasesSection() {
     {
       title: "Executive Decision Support",
       desc: "Run what-if scenarios on live telemetry. Deliver board-ready risk memos in minutes.",
-      image: "/images/hero-offshore.jpg",
+      image: "/images/industrial-workers.jpg",
     },
   ];
 
@@ -397,12 +400,9 @@ function PilotSection() {
           digital twin data layer. Measure time from alert to draft work order. Scale regionally
           on proven ROI.
         </p>
-        <p className="mt-4 text-[13px] text-white/40">
-          Typical pilot scope: $150K–$300K · 3–6 months · 1 facility
-        </p>
         <div className="mt-10">
           <a
-            href="mailto:abel@reelin.ai?subject=Operadroom%20Pilot%20Inquiry"
+            href={CONTACT_MAILTO}
             className="inline-flex items-center px-6 py-3 text-[11px] font-medium tracking-[0.18em] uppercase border border-white/80 hover:bg-white hover:text-black transition-all duration-300"
           >
             Contact Enterprise Sales
@@ -426,7 +426,7 @@ function Footer() {
           <a href="https://reelin.ai" className="hover:text-white transition-colors" target="_blank" rel="noopener noreferrer">
             Reelin AI
           </a>
-          <a href="mailto:abel@reelin.ai" className="hover:text-white transition-colors">
+          <a href={CONTACT_MAILTO} className="hover:text-white transition-colors">
             Contact
           </a>
         </div>
