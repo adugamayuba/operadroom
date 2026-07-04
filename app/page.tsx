@@ -5,6 +5,7 @@ import { trackEvent } from "@/lib/analytics";
 
 const NAV = [
   { label: "Platform", href: "#platform" },
+  { label: "Demo", href: "/demo" },
   { label: "Use Cases", href: "#use-cases" },
   { label: "Security", href: "#security" },
   { label: "Pilot", href: "#pilot" },
@@ -245,6 +246,9 @@ function HeroSection() {
         <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row gap-3 sm:gap-4 animate-fade-up-delay-2">
           <GhostButton href="#pilot" eventName="cta_click" eventProps={{ action: "request_pilot", location: "hero" }}>
             Request Pilot
+          </GhostButton>
+          <GhostButton href="/demo" eventName="cta_click" eventProps={{ action: "view_demo", location: "hero" }}>
+            View Pilot Demo
           </GhostButton>
           <GhostButton href="#platform" eventName="cta_click" eventProps={{ action: "explore_platform", location: "hero" }}>
             Explore Platform
