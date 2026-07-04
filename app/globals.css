@@ -6,6 +6,53 @@
   color-scheme: dark;
 }
 
+/* Demo theme tokens */
+.demo-root[data-demo-theme="light"] {
+  color-scheme: light;
+  --demo-bg: #eef0f3;
+  --demo-surface: #ffffff;
+  --demo-surface-2: #f7f8fa;
+  --demo-border: #c8cdd5;
+  --demo-border-subtle: #dde1e8;
+  --demo-text: #1a1f26;
+  --demo-muted: #5c6570;
+  --demo-faint: #8b939e;
+  --demo-canvas-bg: #e2e5ea;
+  --demo-accent: #2f3d4c;
+  --demo-accent-soft: #eef1f4;
+  --demo-severity-advisory: #5c6570;
+  --demo-severity-warning: #7c2d12;
+  --demo-severity-critical: #7f1d1d;
+  --demo-status-ok: #374151;
+  --demo-status-pending: #57534e;
+}
+
+.demo-root[data-demo-theme="dark"] {
+  color-scheme: dark;
+  --demo-bg: #121416;
+  --demo-surface: #1a1d21;
+  --demo-surface-2: #22262b;
+  --demo-border: #343a42;
+  --demo-border-subtle: #2a2f36;
+  --demo-text: #e8eaed;
+  --demo-muted: #9aa3ad;
+  --demo-faint: #6b7280;
+  --demo-canvas-bg: #181b1f;
+  --demo-accent: #c5cad1;
+  --demo-accent-soft: #252930;
+  --demo-severity-advisory: #9aa3ad;
+  --demo-severity-warning: #d6d3d1;
+  --demo-severity-critical: #fca5a5;
+  --demo-status-ok: #d1d5db;
+  --demo-status-pending: #a8a29e;
+}
+
+.demo-root {
+  background: var(--demo-bg);
+  color: var(--demo-text);
+  font-feature-settings: "tnum" 1;
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -105,16 +152,6 @@ body {
   opacity: 0;
 }
 
-@keyframes pulse-soft {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.45;
-  }
-}
-
 .animate-pulse-soft {
   animation: pulse-soft 2s ease-in-out infinite;
 }
@@ -122,7 +159,7 @@ body {
 @keyframes demo-fade-in {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(4px);
   }
   to {
     opacity: 1;
@@ -131,27 +168,76 @@ body {
 }
 
 .demo-fade-in {
-  animation: demo-fade-in 0.45s ease forwards;
-}
-
-.demo-glow {
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
-}
-
-.demo-glow-green {
-  box-shadow: 0 0 24px rgba(52, 211, 153, 0.2);
+  animation: demo-fade-in 0.35s ease forwards;
 }
 
 .demo-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+  scrollbar-color: var(--demo-border) transparent;
 }
 
 .demo-scroll::-webkit-scrollbar {
-  width: 4px;
+  width: 5px;
 }
 
 .demo-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 4px;
+  background: var(--demo-border);
+  border-radius: 2px;
+}
+
+.demo-panel {
+  background: var(--demo-surface);
+  border: 1px solid var(--demo-border);
+}
+
+.demo-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--demo-muted);
+  letter-spacing: 0.02em;
+}
+
+.demo-heading {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--demo-text);
+  letter-spacing: 0.01em;
+}
+
+.demo-btn-primary {
+  padding: 0.625rem 1.25rem;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--demo-text);
+  color: var(--demo-bg);
+  border: 1px solid var(--demo-text);
+  transition: opacity 0.2s;
+}
+
+.demo-btn-primary:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.demo-btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.demo-btn-secondary {
+  padding: 0.625rem 1.25rem;
+  font-size: 12px;
+  font-weight: 500;
+  background: transparent;
+  color: var(--demo-text);
+  border: 1px solid var(--demo-border);
+  transition: background 0.2s;
+}
+
+.demo-btn-secondary:hover:not(:disabled) {
+  background: var(--demo-surface-2);
+}
+
+.demo-btn-secondary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }

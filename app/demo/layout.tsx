@@ -1,15 +1,23 @@
 import type { Metadata } from "next";
+import { IBM_Plex_Sans } from "next/font/google";
+import { DemoThemeProvider } from "@/components/demo/DemoThemeProvider";
+
+const ibm = IBM_Plex_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-demo",
+});
 
 export const metadata: Metadata = {
   title: "Pilot Simulator — Operadroom",
   description:
     "Interactive sandbox demonstrating closed-loop maintenance execution from digital twin alert to SAP work order draft.",
-  openGraph: {
-    title: "Operadroom Pilot Simulator",
-    description: "Rheinland refinery sandbox — telemetry to work order in seconds.",
-  },
 };
 
 export default function DemoLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return (
+    <div className={ibm.className}>
+      <DemoThemeProvider>{children}</DemoThemeProvider>
+    </div>
+  );
 }

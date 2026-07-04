@@ -3,9 +3,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { LogoMark } from "@/components/demo/LogoMark";
+import { useDemoTheme } from "@/components/demo/DemoThemeProvider";
+import { TwinViewer3D } from "@/components/demo/TwinViewer3D";
 import { trackEvent } from "@/lib/analytics";
 import {
   ASSETS,
+  ASSET_LIST,
   buildAgentLogs,
   buildInventory,
   buildManualMatch,
@@ -17,39 +20,9 @@ import {
   type AssetId,
   type Severity,
   type SimPhase,
-  type TelemetryReading,
-  type WorkOrderDraft,
 } from "@/lib/demo/scenarios";
 
-const PHASES: SimPhase[] = [
-  "idle",
-  "telemetry",
-  "ingest",
-  "diagnose",
-  "inventory",
-  "draft",
-  "review",
-  "approved",
-];
-
-function severityColor(severity: Severity, reading?: TelemetryReading) {
-  if (!reading) {
-    return severity === "critical"
-      ? "text-red-400 border-red-400/40 bg-red-400/10"
-      : severity === "warning"
-        ? "text-amber-400 border-amber-400/40 bg-amber-400/10"
-        : "text-sky-400 border-sky-400/40 bg-sky-400/10";
-  }
-  const val = reading.values[severity];
-  const breached =
-    reading.direction === "above"
-      ? val >= reading.threshold[severity]
-      : val <= reading.threshold[severity];
-  if (breached && severity === "critical") return "text-red-400 border-red-400/50 bg-red-500/10";
-  if (breached && severity === "warning") return "text-amber-400 border-amber-400/50 bg-amber-500/10";
-  if (breached) return "text-sky-400 border-sky-400/50 bg-sky-500/10";
-  return "text-white/70 border-white/10 bg-white/[0.03]";
-}
+const PHASES: SimPhase[] = ["idle", "telemetry", "ingest", "diagnose", "inventory", "draft", "review", "approved"];
 
 function phaseIndex(phase: SimPhase) {
   return PHASES.indexOf(phase);
@@ -66,25 +39,28 @@ function formatDate(iso: string) {
 }
 
 function DemoNav() {
+  const { theme, toggle } = useDemoTheme();
   return (
-    <header className="fixed top-0 inset-x-0 z-50 bg-black/60 backdrop-blur-md border-b border-white/5 pt-[env(safe-area-inset-top)]">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-4">
-        <Link href="/" className="flex items-center gap-2.5 group shrink-0">
-          <LogoMark className="w-4 h-4 sm:w-5 sm:h-5 text-white/90 group-hover:text-white transition-colors" />
-          <span className="text-[11px] sm:text-[13px] font-semibold tracking-[0.22em] sm:tracking-[0.35em] uppercase">
-            Operadroom
-          </span>
+    <header className="fixed top-0 inset-x-0 z-50 bg-[var(--demo-surface)] border-b border-[var(--demo-border)] pt-[env(safe-area-inset-top)]">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
+        <Link href="/" className="flex items-center gap-2 shrink-0">
+          <LogoMark className="w-4 h-4 text-[var(--demo-text)] opacity-80" />
+          <span className="text-[13px] font-semibold text-[var(--demo-text)]">Operadroom</span>
         </Link>
-        <div className="hidden sm:flex items-center gap-2 text-[10px] tracking-[0.18em] uppercase text-white/40">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse-soft" />
-          Sandbox Environment
+        <span className="hidden sm:block text-[11px] text-[var(--demo-muted)]">Pilot simulator · Sandbox</span>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={toggle}
+            className="text-[11px] font-medium text-[var(--demo-muted)] hover:text-[var(--demo-text)] border border-[var(--demo-border)] px-2.5 py-1"
+            aria-label="Toggle theme"
+          >
+            {theme === "light" ? "Dark" : "Light"}
+          </button>
+          <Link href="/" className="text-[11px] text-[var(--demo-muted)] hover:text-[var(--demo-text)]">
+            Landing
+          </Link>
         </div>
-        <Link
-          href="/"
-          className="text-[10px] sm:text-[11px] tracking-[0.16em] uppercase text-white/60 hover:text-white transition-colors"
-        >
-          ← Landing
-        </Link>
       </div>
     </header>
   );
@@ -102,42 +78,25 @@ function PhaseTimeline({ phase }: { phase: SimPhase }) {
   ];
 
   return (
-    <div className="border border-white/10 bg-white/[0.02] p-4 sm:p-5">
-      <p className="text-[10px] tracking-[0.2em] uppercase text-white/40 mb-4">Execution Pipeline</p>
-      <div className="flex flex-wrap gap-2 sm:gap-0 sm:flex-nowrap sm:items-center">
+    <div className="demo-panel p-4">
+      <p className="demo-label mb-3">Execution pipeline</p>
+      <div className="flex flex-wrap sm:flex-nowrap gap-1">
         {steps.map((step, i) => {
           const idx = phaseIndex(step.key as SimPhase);
-          const done = current > idx;
-          const active = phase === step.key || (phase === "approved" && step.key === "review");
+          const done = current > idx || phase === "approved";
+          const active = phase === step.key;
           return (
-            <div key={step.key} className="flex items-center flex-1 min-w-[80px]">
-              <div className="flex flex-col items-center flex-1">
+            <div key={step.key} className="flex items-center flex-1 min-w-[72px]">
+              <div className="flex flex-col flex-1">
                 <div
-                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border flex items-center justify-center text-[10px] font-semibold transition-all duration-500 ${
-                    done || phase === "approved"
-                      ? "border-emerald-400/60 bg-emerald-400/15 text-emerald-300"
-                      : active
-                        ? "border-white bg-white text-black demo-glow"
-                        : "border-white/20 text-white/30"
-                  }`}
-                >
-                  {done || (phase === "approved" && step.key !== "review") ? "✓" : i + 1}
-                </div>
+                  className={`h-1 w-full transition-colors ${done ? "bg-[var(--demo-text)]" : active ? "bg-[var(--demo-muted)]" : "bg-[var(--demo-border-subtle)]"}`}
+                />
                 <span
-                  className={`mt-2 text-[9px] sm:text-[10px] tracking-wider uppercase text-center ${
-                    active ? "text-white" : done ? "text-emerald-400/80" : "text-white/35"
-                  }`}
+                  className={`mt-2 text-[10px] ${active ? "text-[var(--demo-text)] font-medium" : done ? "text-[var(--demo-muted)]" : "text-[var(--demo-faint)]"}`}
                 >
-                  {step.label}
+                  {String(i + 1).padStart(2, "0")} {step.label}
                 </span>
               </div>
-              {i < steps.length - 1 && (
-                <div
-                  className={`hidden sm:block h-px flex-1 mx-1 transition-colors duration-500 ${
-                    current > idx ? "bg-emerald-400/50" : "bg-white/10"
-                  }`}
-                />
-              )}
             </div>
           );
         })}
@@ -168,78 +127,60 @@ function ControlBar({
   onApprove: () => void;
 }) {
   return (
-    <div className="border border-white/10 bg-black/80 p-4 sm:p-5 space-y-4">
+    <div className="demo-panel p-4 sm:p-5 space-y-4">
       <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
         <div>
-          <p className="text-[10px] tracking-[0.2em] uppercase text-white/40 mb-1">Facility</p>
-          <h1 className="text-lg sm:text-xl font-bold uppercase tracking-tight">{FACILITY.name}</h1>
-          <p className="text-[12px] text-white/45 mt-1">
+          <p className="demo-label">Facility</p>
+          <h1 className="text-lg font-semibold text-[var(--demo-text)] mt-1">{FACILITY.name}</h1>
+          <p className="text-[12px] text-[var(--demo-muted)] mt-1">
             {FACILITY.code} · {FACILITY.region}
           </p>
-          <p className="text-[11px] text-white/35 mt-1 hidden sm:block">{FACILITY.integration}</p>
+          <p className="text-[11px] text-[var(--demo-faint)] mt-0.5 hidden sm:block">{FACILITY.integration}</p>
         </div>
-        <div className="flex flex-wrap gap-2 sm:gap-3">
-          <button
-            type="button"
-            disabled={running}
-            onClick={onRun}
-            className="px-5 py-3 text-[11px] font-medium tracking-[0.18em] uppercase border border-white bg-white text-black hover:bg-white/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-          >
-            {running ? "Running…" : phase === "idle" ? "Run Simulation" : "Re-run"}
+        <div className="flex flex-wrap gap-2">
+          <button type="button" disabled={running} onClick={onRun} className="demo-btn-primary">
+            {running ? "Running…" : phase === "idle" ? "Run simulation" : "Re-run"}
           </button>
-          <button
-            type="button"
-            disabled={running}
-            onClick={onReset}
-            className="px-5 py-3 text-[11px] font-medium tracking-[0.18em] uppercase border border-white/30 text-white/70 hover:border-white/60 hover:text-white disabled:opacity-40 transition-all"
-          >
+          <button type="button" disabled={running} onClick={onReset} className="demo-btn-secondary">
             Reset
           </button>
           {phase === "review" && (
-            <button
-              type="button"
-              onClick={onApprove}
-              className="px-5 py-3 text-[11px] font-medium tracking-[0.18em] uppercase border border-emerald-400/60 text-emerald-300 hover:bg-emerald-400/10 transition-all demo-glow-green"
-            >
-              Simulate Engineer Approval
+            <button type="button" onClick={onApprove} className="demo-btn-secondary font-medium">
+              Engineer approval
             </button>
           )}
         </div>
       </div>
 
-      <div className="grid sm:grid-cols-2 gap-4 pt-2 border-t border-white/5">
+      <div className="grid sm:grid-cols-2 gap-4 pt-4 border-t border-[var(--demo-border-subtle)]">
         <div>
-          <label className="text-[10px] tracking-[0.18em] uppercase text-white/40">Asset</label>
+          <label className="demo-label block mb-2">Equipment tag</label>
           <select
             value={assetId}
             disabled={running}
             onChange={(e) => onAssetChange(e.target.value as AssetId)}
-            className="mt-2 w-full bg-black border border-white/15 px-3 py-2.5 text-[13px] text-white focus:border-white/40 outline-none disabled:opacity-50"
+            className="w-full bg-[var(--demo-surface-2)] border border-[var(--demo-border)] px-3 py-2 text-[13px] text-[var(--demo-text)] outline-none focus:border-[var(--demo-muted)] disabled:opacity-50"
           >
-            {(Object.keys(ASSETS) as AssetId[]).map((id) => (
-              <option key={id} value={id}>
-                {ASSETS[id].tag} — {ASSETS[id].name}
+            {ASSET_LIST.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.tag} — {a.name} ({a.unit})
               </option>
             ))}
           </select>
         </div>
         <div>
-          <label className="text-[10px] tracking-[0.18em] uppercase text-white/40">Anomaly Severity</label>
-          <div className="mt-2 grid grid-cols-3 gap-2">
+          <label className="demo-label block mb-2">Alert severity</label>
+          <div className="grid grid-cols-3 gap-2">
             {(["advisory", "warning", "critical"] as Severity[]).map((s) => (
               <button
                 key={s}
                 type="button"
                 disabled={running}
                 onClick={() => onSeverityChange(s)}
-                className={`py-2.5 text-[10px] sm:text-[11px] tracking-[0.12em] uppercase border transition-all disabled:opacity-50 ${
+                className={`py-2 text-[11px] font-medium border transition-colors disabled:opacity-50 ${
                   severity === s
-                    ? s === "critical"
-                      ? "border-red-400/70 bg-red-500/15 text-red-300"
-                      : s === "warning"
-                        ? "border-amber-400/70 bg-amber-500/15 text-amber-300"
-                        : "border-sky-400/70 bg-sky-500/15 text-sky-300"
-                    : "border-white/10 text-white/45 hover:border-white/25"
+                    ? "border-[var(--demo-text)] bg-[var(--demo-accent-soft)] text-[var(--demo-text)]"
+                    : "border-[var(--demo-border)] text-[var(--demo-muted)] hover:border-[var(--demo-muted)]"
                 }`}
               >
                 {getSeverityMeta(s).label}
@@ -252,50 +193,31 @@ function ControlBar({
   );
 }
 
-function TelemetryPanel({
-  assetId,
-  severity,
-  phase,
-}: {
-  assetId: AssetId;
-  severity: Severity;
-  phase: SimPhase;
-}) {
+function TelemetryPanel({ assetId, severity, phase }: { assetId: AssetId; severity: Severity; phase: SimPhase }) {
   const asset = ASSETS[assetId];
   const active = phaseIndex(phase) >= phaseIndex("telemetry");
   const meta = getSeverityMeta(severity);
 
   return (
-    <div className="border border-white/10 bg-white/[0.02] flex flex-col h-full min-h-[420px]">
-      <div className="px-4 sm:px-5 py-4 border-b border-white/10 flex items-start justify-between gap-3">
+    <div className="demo-panel flex flex-col min-h-[380px]">
+      <div className="px-4 py-3 border-b border-[var(--demo-border-subtle)] flex justify-between gap-3">
         <div>
-          <p className="text-[10px] tracking-[0.2em] uppercase text-white/40">Layer 01</p>
-          <h2 className="text-[13px] sm:text-[14px] font-semibold tracking-wide uppercase mt-1">
-            Digital Twin · Telemetry
-          </h2>
-          <p className="text-[11px] text-white/40 mt-1">{asset.twinSource}</p>
+          <p className="demo-label">01 · Telemetry</p>
+          <p className="demo-heading mt-0.5">Digital twin input</p>
         </div>
-        <div
-          className={`shrink-0 px-2.5 py-1 text-[9px] tracking-wider uppercase border ${
-            active ? severityColor(severity) : "border-white/10 text-white/30"
-          }`}
-        >
-          {active ? meta.alertCode : "Standby"}
-        </div>
+        <span className="text-[10px] font-mono text-[var(--demo-muted)] self-start pt-1">
+          {active ? meta.alertCode : "STBY"}
+        </span>
       </div>
 
-      <div className="p-4 sm:p-5 flex-1 space-y-3 overflow-y-auto demo-scroll">
-        <div className="flex items-center justify-between text-[10px] tracking-wider uppercase text-white/35">
+      <div className="p-4 flex-1 space-y-2 overflow-y-auto demo-scroll">
+        <div className="flex justify-between text-[11px] text-[var(--demo-muted)] mb-1">
           <span>{asset.tag} · {asset.unit}</span>
-          <span className={active ? "text-emerald-400" : ""}>
-            {active ? "Live stream" : "Idle"}
-            {active && <span className="inline-block w-1.5 h-1.5 ml-2 rounded-full bg-emerald-400 animate-pulse-soft" />}
-          </span>
+          <span>{active ? "Streaming" : "Idle"}</span>
         </div>
 
-        {asset.telemetry.map((reading, i) => {
+        {asset.telemetry.map((reading) => {
           const val = active ? reading.values[severity] : reading.baseline;
-          const pct = Math.min(100, (val / (reading.baseline * 2.2)) * 100);
           const breached =
             active &&
             (reading.direction === "above"
@@ -305,57 +227,43 @@ function TelemetryPanel({
           return (
             <div
               key={reading.label}
-              className={`border p-3 sm:p-4 transition-all duration-700 ${breached ? severityColor(severity, reading) : "border-white/10 bg-black/40"}`}
-              style={{ transitionDelay: `${i * 80}ms` }}
+              className={`border px-3 py-2.5 ${breached ? "border-[var(--demo-text)] bg-[var(--demo-surface-2)]" : "border-[var(--demo-border-subtle)]"}`}
             >
-              <div className="flex justify-between items-baseline gap-2">
-                <span className="text-[11px] sm:text-[12px] text-white/80">{reading.label}</span>
-                <span className="text-[13px] sm:text-[15px] font-mono tabular-nums">
-                  {typeof val === "number" && val < 1 ? val.toFixed(5) : val.toFixed(1)}
-                  <span className="text-[10px] text-white/40 ml-1">{reading.unit}</span>
+              <div className="flex justify-between gap-2">
+                <span className="text-[12px] text-[var(--demo-text)]">{reading.label}</span>
+                <span className="text-[13px] font-mono tabular-nums text-[var(--demo-text)]">
+                  {val < 1 && val > 0 ? val.toFixed(5) : val.toFixed(1)}
+                  <span className="text-[10px] text-[var(--demo-muted)] ml-1">{reading.unit}</span>
                 </span>
               </div>
-              <div className="mt-3 h-1.5 bg-white/10 overflow-hidden rounded-full">
+              <div className="mt-2 h-1 bg-[var(--demo-border-subtle)]">
                 <div
-                  className={`h-full transition-all duration-1000 rounded-full ${
-                    breached
-                      ? severity === "critical"
-                        ? "bg-red-400"
-                        : severity === "warning"
-                          ? "bg-amber-400"
-                          : "bg-sky-400"
-                      : "bg-white/30"
-                  }`}
-                  style={{ width: `${pct}%` }}
+                  className="h-full bg-[var(--demo-muted)] transition-all duration-700"
+                  style={{
+                    width: `${Math.min(100, (val / (reading.baseline * 2.2)) * 100)}%`,
+                  }}
                 />
               </div>
-              <div className="mt-2 flex justify-between text-[9px] text-white/30 uppercase tracking-wider">
-                <span>Baseline {reading.baseline}</span>
-                <span>Threshold {reading.threshold[severity]}</span>
+              <div className="mt-1.5 flex justify-between text-[10px] text-[var(--demo-faint)] font-mono">
+                <span>BL {reading.baseline}</span>
+                <span>LIM {reading.threshold[severity]}</span>
               </div>
             </div>
           );
         })}
 
         {active && (
-          <div className="border border-dashed border-white/15 p-3 mt-4 demo-fade-in">
-            <p className="text-[10px] tracking-wider uppercase text-white/40">Twin Event Payload</p>
-            <pre className="mt-2 text-[10px] sm:text-[11px] text-white/55 font-mono leading-relaxed overflow-x-auto">
-{`{
-  "eventId": "evt-${asset.tag}-${severity.slice(0, 3)}",
-  "assetTag": "${asset.tag}",
-  "severity": "${severity.toUpperCase()}",
-  "source": "Cognite/CDF",
-  "mode": "READ_ONLY",
-  "ts": "${new Date().toISOString()}"
-}`}
+          <div className="border border-dashed border-[var(--demo-border)] p-3 mt-3 demo-fade-in">
+            <p className="demo-label">Event payload</p>
+            <pre className="mt-2 text-[10px] font-mono text-[var(--demo-muted)] leading-relaxed overflow-x-auto">
+{`{"eventId":"evt-${asset.tag}","severity":"${severity.toUpperCase()}","mode":"READ_ONLY"}`}
             </pre>
           </div>
         )}
       </div>
 
-      <div className="px-4 py-3 border-t border-white/10 text-[10px] text-white/30 tracking-wider uppercase">
-        OT Gateway · No write access to DCS
+      <div className="px-4 py-2 border-t border-[var(--demo-border-subtle)] text-[10px] text-[var(--demo-faint)]">
+        OT gateway · read-only · {asset.twinSource}
       </div>
     </div>
   );
@@ -378,76 +286,55 @@ function AgentPanel({
   const logRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (logRef.current) {
-      logRef.current.scrollTop = logRef.current.scrollHeight;
-    }
+    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
   }, [visibleCount]);
 
-  const levelStyle = {
-    info: "border-white/10 text-white/60",
-    action: "border-sky-400/30 text-sky-200/90 bg-sky-500/5",
-    success: "border-emerald-400/30 text-emerald-200/90 bg-emerald-500/5",
-    warn: "border-amber-400/30 text-amber-200/90 bg-amber-500/5",
-  };
-
   return (
-    <div className="border border-white/15 bg-white/[0.04] flex flex-col h-full min-h-[420px] relative">
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none opacity-50" />
-      <div className="relative px-4 sm:px-5 py-4 border-b border-white/10 flex items-start justify-between gap-3">
+    <div className="demo-panel flex flex-col min-h-[380px]">
+      <div className="px-4 py-3 border-b border-[var(--demo-border-subtle)] flex justify-between">
         <div>
-          <p className="text-[10px] tracking-[0.2em] uppercase text-white/40">Layer 02</p>
-          <h2 className="text-[13px] sm:text-[14px] font-semibold tracking-wide uppercase mt-1">
-            Operadroom Agent
-          </h2>
-          <p className="text-[11px] text-white/40 mt-1">Reelin agent architecture · Cognitive execution</p>
+          <p className="demo-label">02 · Agent</p>
+          <p className="demo-heading mt-0.5">Operadroom execution</p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className={`w-2 h-2 rounded-full ${active ? "bg-sky-400 animate-pulse-soft" : "bg-white/20"}`} />
-          <span className="text-[9px] tracking-wider uppercase text-white/40">
-            {active ? "Processing" : "Idle"}
-          </span>
-        </div>
+        <span className="text-[11px] text-[var(--demo-muted)]">{active ? "Active" : "Standby"}</span>
       </div>
 
-      <div ref={logRef} className="relative flex-1 p-4 sm:p-5 space-y-2 overflow-y-auto demo-scroll min-h-[200px]">
+      <div ref={logRef} className="flex-1 p-4 space-y-2 overflow-y-auto demo-scroll min-h-[180px]">
         {!active && (
-          <p className="text-[12px] text-white/35 leading-relaxed">
-            Agent standing by. Run simulation to watch read → reason → act across OT and IT systems.
+          <p className="text-[12px] text-[var(--demo-muted)] leading-relaxed">
+            Run simulation to trace alert normalization, document retrieval, and work order composition.
           </p>
         )}
         {logs.slice(0, visibleCount).map((log) => (
-          <div
-            key={log.id}
-            className={`border px-3 py-2.5 demo-fade-in ${levelStyle[log.level]}`}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[9px] tracking-wider uppercase opacity-60">{log.timestamp}</span>
-              <span className="text-[9px] tracking-wider uppercase opacity-60">{log.phase}</span>
+          <div key={log.id} className="border-l-2 border-[var(--demo-border)] pl-3 py-1 demo-fade-in">
+            <div className="flex justify-between text-[10px] font-mono text-[var(--demo-faint)]">
+              <span>{log.timestamp}</span>
+              <span>{log.phase}</span>
             </div>
-            <p className="mt-1 text-[11px] sm:text-[12px] leading-snug">{log.message}</p>
-            {log.detail && <p className="mt-1 text-[10px] opacity-60 leading-relaxed">{log.detail}</p>}
+            <p className="mt-0.5 text-[12px] text-[var(--demo-text)]">{log.message}</p>
+            {log.detail && <p className="mt-0.5 text-[11px] text-[var(--demo-muted)]">{log.detail}</p>}
           </div>
         ))}
 
         {manual && phaseIndex(phase) >= phaseIndex("diagnose") && (
-          <div className="border border-white/15 bg-black/50 p-4 mt-3 demo-fade-in">
-            <p className="text-[10px] tracking-wider uppercase text-white/40">Manual Corpus Match</p>
-            <p className="mt-2 text-[11px] text-white/70">{manual.source}</p>
-            <p className="text-[10px] text-sky-300/80 mt-1">{manual.section}</p>
-            <p className="mt-3 text-[11px] text-white/55 leading-relaxed border-l-2 border-white/20 pl-3">
+          <div className="border border-[var(--demo-border)] p-3 mt-2 demo-fade-in bg-[var(--demo-surface-2)]">
+            <p className="demo-label">Document match</p>
+            <p className="text-[12px] text-[var(--demo-text)] mt-1">{manual.source}</p>
+            <p className="text-[11px] text-[var(--demo-muted)] mt-0.5">{manual.section}</p>
+            <p className="mt-2 text-[11px] text-[var(--demo-muted)] leading-relaxed border-l border-[var(--demo-border)] pl-2">
               {manual.excerpt}
             </p>
-            <p className="mt-2 text-[10px] text-white/35">
-              Confidence {(manual.confidence * 100).toFixed(0)}% · Vector retrieval · Customer corpus only
+            <p className="mt-2 text-[10px] font-mono text-[var(--demo-faint)]">
+              Match {(manual.confidence * 100).toFixed(0)}%
             </p>
           </div>
         )}
       </div>
 
       {reelinId && phaseIndex(phase) >= phaseIndex("review") && (
-        <div className="relative px-4 py-3 border-t border-white/10 bg-black/60">
-          <p className="text-[9px] tracking-wider uppercase text-white/40">Reelin ID Audit Seal</p>
-          <p className="mt-1 text-[10px] font-mono text-emerald-400/90 break-all">{reelinId}</p>
+        <div className="px-4 py-2.5 border-t border-[var(--demo-border-subtle)] bg-[var(--demo-surface-2)]">
+          <p className="demo-label">Reelin ID audit</p>
+          <p className="mt-1 text-[10px] font-mono text-[var(--demo-muted)] break-all">{reelinId}</p>
         </div>
       )}
     </div>
@@ -460,7 +347,7 @@ function ErpPanel({
   inventory,
   approved,
 }: {
-  workOrder: WorkOrderDraft | null;
+  workOrder: ReturnType<typeof buildWorkOrder> | null;
   phase: SimPhase;
   inventory: ReturnType<typeof buildInventory>;
   approved: boolean;
@@ -469,147 +356,104 @@ function ErpPanel({
   const showDraft = phaseIndex(phase) >= phaseIndex("draft");
   const showReview = phaseIndex(phase) >= phaseIndex("review");
 
+  const statusLabel = approved ? "Released" : showReview ? "Draft" : "Pending";
+
   return (
-    <div className="border border-white/10 bg-white/[0.02] flex flex-col h-full min-h-[420px]">
-      <div className="px-4 sm:px-5 py-4 border-b border-white/10 flex items-start justify-between gap-3">
+    <div className="demo-panel flex flex-col min-h-[380px]">
+      <div className="px-4 py-3 border-b border-[var(--demo-border-subtle)] flex justify-between">
         <div>
-          <p className="text-[10px] tracking-[0.2em] uppercase text-white/40">Layer 03</p>
-          <h2 className="text-[13px] sm:text-[14px] font-semibold tracking-wide uppercase mt-1">
-            SAP PM · CMMS Output
-          </h2>
-          <p className="text-[11px] text-white/40 mt-1">IBM Maximo compatible export</p>
+          <p className="demo-label">03 · ERP output</p>
+          <p className="demo-heading mt-0.5">SAP PM / Maximo</p>
         </div>
-        <div
-          className={`shrink-0 px-2.5 py-1 text-[9px] tracking-wider uppercase border ${
-            approved
-              ? "border-emerald-400/60 bg-emerald-400/10 text-emerald-300"
-              : showReview
-                ? "border-amber-400/60 bg-amber-400/10 text-amber-300"
-                : "border-white/10 text-white/30"
-          }`}
-        >
-          {approved ? "Released" : showReview ? "Draft" : "Pending"}
-        </div>
+        <span className="text-[10px] font-mono text-[var(--demo-muted)]">{statusLabel}</span>
       </div>
 
-      <div className="p-4 sm:p-5 flex-1 space-y-4 overflow-y-auto demo-scroll">
+      <div className="p-4 flex-1 space-y-3 overflow-y-auto demo-scroll">
         {showInventory && (
           <div className="demo-fade-in">
-            <p className="text-[10px] tracking-wider uppercase text-white/40 mb-3">SAP MM · Stock Check</p>
-            <div className="space-y-2">
-              {inventory.map((line) => (
-                <div key={line.material} className="border border-white/10 p-3 grid grid-cols-12 gap-2 text-[10px] sm:text-[11px]">
-                  <div className="col-span-3 font-mono text-white/50">{line.material}</div>
-                  <div className="col-span-5 text-white/70">{line.description}</div>
-                  <div className="col-span-2 text-white/40">{line.qtyAvailable} avail</div>
-                  <div className="col-span-2 text-right">
-                    <span
-                      className={
-                        line.status === "procure"
-                          ? "text-amber-400"
-                          : line.status === "partial"
-                            ? "text-sky-400"
-                            : "text-emerald-400"
-                      }
-                    >
-                      {line.status === "procure" ? "PR Draft" : "OK"}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <p className="demo-label mb-2">SAP MM stock</p>
+            <table className="w-full text-[11px]">
+              <thead>
+                <tr className="text-left text-[var(--demo-faint)] border-b border-[var(--demo-border-subtle)]">
+                  <th className="pb-1 font-medium">Material</th>
+                  <th className="pb-1 font-medium">Description</th>
+                  <th className="pb-1 font-medium text-right">Qty</th>
+                  <th className="pb-1 font-medium text-right">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {inventory.map((line) => (
+                  <tr key={line.material} className="border-b border-[var(--demo-border-subtle)]">
+                    <td className="py-2 font-mono text-[var(--demo-muted)]">{line.material}</td>
+                    <td className="py-2 text-[var(--demo-text)] pr-2">{line.description}</td>
+                    <td className="py-2 text-right font-mono text-[var(--demo-muted)]">{line.qtyAvailable}</td>
+                    <td className="py-2 text-right text-[var(--demo-muted)]">
+                      {line.status === "procure" ? "PR draft" : "Reserved"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 
         {showDraft && workOrder && (
-          <div className="border border-white/15 bg-black/40 demo-fade-in">
-            <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
-              <span className="text-[11px] font-semibold tracking-wider uppercase">Work Order Preview</span>
-              <span className="text-[10px] font-mono text-white/40">
-                {approved ? "WO-9001847" : "WO-DRAFT-77102"}
+          <div className="border border-[var(--demo-border)] demo-fade-in">
+            <div className="px-3 py-2 border-b border-[var(--demo-border-subtle)] flex justify-between bg-[var(--demo-surface-2)]">
+              <span className="text-[11px] font-medium text-[var(--demo-text)]">Work order</span>
+              <span className="text-[10px] font-mono text-[var(--demo-muted)]">
+                {approved ? "9001847" : "DRAFT-77102"}
               </span>
             </div>
-            <div className="p-4 space-y-3 text-[11px] sm:text-[12px]">
+            <div className="p-3 space-y-2 text-[11px]">
               {[
-                ["Order Type", workOrder.orderType],
+                ["Type", workOrder.orderType],
                 ["Priority", workOrder.priority],
                 ["Equipment", workOrder.equipment],
-                ["Functional Loc.", workOrder.functionalLocation],
-                ["Planner Group", workOrder.plannerGroup],
-                ["Work Center", workOrder.workCenter],
-                ["Est. Hours", String(workOrder.estimatedHours)],
-                ["Required Start", formatDate(workOrder.requiredStart)],
-                ["Required End", formatDate(workOrder.requiredEnd)],
+                ["Func. location", workOrder.functionalLocation],
+                ["Work center", workOrder.workCenter],
+                ["Est. hours", String(workOrder.estimatedHours)],
               ].map(([k, v]) => (
-                <div key={k} className="grid grid-cols-3 gap-2 border-b border-white/5 pb-2">
-                  <span className="text-white/40 uppercase text-[10px] tracking-wider">{k}</span>
-                  <span className="col-span-2 text-white/75">{v}</span>
+                <div key={k} className="grid grid-cols-3 gap-2 py-1 border-b border-[var(--demo-border-subtle)]">
+                  <span className="text-[var(--demo-faint)]">{k}</span>
+                  <span className="col-span-2 text-[var(--demo-text)]">{v}</span>
                 </div>
               ))}
+              <p className="pt-2 text-[var(--demo-muted)]">{workOrder.shortText}</p>
               <div className="pt-2">
-                <p className="text-[10px] tracking-wider uppercase text-white/40">Short Text</p>
-                <p className="mt-1 text-white/80">{workOrder.shortText}</p>
-              </div>
-              <div>
-                <p className="text-[10px] tracking-wider uppercase text-white/40">Operations</p>
-                <div className="mt-2 space-y-2">
-                  {workOrder.operations.map((op) => (
-                    <div key={op.op} className="flex gap-3 border-l border-white/20 pl-3">
-                      <span className="font-mono text-white/35">{op.op}</span>
-                      <div>
-                        <p className="text-white/70">{op.description}</p>
-                        <p className="text-[10px] text-white/35">{op.duration}h est.</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="text-[10px] tracking-wider uppercase text-white/40">Safety / ISSoW</p>
-                <ul className="mt-2 space-y-1">
-                  {workOrder.safetyNotes.map((note) => (
-                    <li key={note} className="text-[10px] text-amber-200/70 flex gap-2">
-                      <span>⚠</span>
-                      <span>{note}</span>
-                    </li>
-                  ))}
-                </ul>
+                <p className="demo-label mb-1">Operations</p>
+                {workOrder.operations.map((op) => (
+                  <div key={op.op} className="flex gap-2 py-1 text-[var(--demo-muted)]">
+                    <span className="font-mono w-6 text-[var(--demo-faint)]">{op.op}</span>
+                    <span>{op.description}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         )}
 
         {showReview && !approved && (
-          <div className="border border-dashed border-amber-400/40 bg-amber-500/5 p-4 demo-fade-in">
-            <p className="text-[11px] font-semibold tracking-wider uppercase text-amber-200">
-              Human-in-the-Loop Required
+          <div className="border border-[var(--demo-border)] p-3 demo-fade-in bg-[var(--demo-surface-2)]">
+            <p className="text-[12px] font-medium text-[var(--demo-text)]">Human review required</p>
+            <p className="mt-1 text-[11px] text-[var(--demo-muted)] leading-relaxed">
+              Work order saved as draft. No RELEASE posted to SAP PM. Authorized engineer must review and release.
             </p>
-            <p className="mt-2 text-[11px] text-white/55 leading-relaxed">
-              Agent has composed the work order and stopped. No RELEASE transaction was sent to SAP PM.
-              An authorized maintenance engineer must review, edit if needed, and release manually.
-            </p>
-            <p className="mt-3 text-[10px] text-white/35 uppercase tracking-wider">
-              Policy: HITL-01 · Autonomous writes disabled
-            </p>
+            <p className="mt-2 text-[10px] font-mono text-[var(--demo-faint)]">Policy HITL-01</p>
           </div>
         )}
 
         {approved && workOrder && (
-          <div className="border border-emerald-400/40 bg-emerald-500/5 p-4 demo-fade-in">
-            <p className="text-[11px] font-semibold tracking-wider uppercase text-emerald-300">
-              Engineer Authorized · WO Released
+          <div className="border border-[var(--demo-border)] p-3 demo-fade-in">
+            <p className="text-[12px] font-medium text-[var(--demo-text)]">Released to planning queue</p>
+            <p className="mt-1 text-[11px] text-[var(--demo-muted)]">
+              Maintenance supervisor authorization recorded. Audit log exported.
             </p>
-            <p className="mt-2 text-[11px] text-white/55 leading-relaxed">
-              Simulated approval by Maintenance Supervisor. Work order WO-9001847 released to planning queue.
-              Reelin ID audit exported to compliance log.
-            </p>
-            <p className="mt-2 text-[10px] font-mono text-emerald-400/80">{workOrder.reelinId}</p>
+            <p className="mt-2 text-[10px] font-mono text-[var(--demo-faint)]">{workOrder.reelinId}</p>
           </div>
         )}
 
-        {!showInventory && (
-          <p className="text-[12px] text-white/35">Awaiting agent inventory and work order composition…</p>
-        )}
+        {!showInventory && <p className="text-[12px] text-[var(--demo-muted)]">Awaiting agent output…</p>}
       </div>
     </div>
   );
@@ -618,17 +462,18 @@ function ErpPanel({
 function MetricsBar({ phase, severity, elapsed }: { phase: SimPhase; severity: Severity; elapsed: number }) {
   if (phase === "idle") return null;
   const meta = getSeverityMeta(severity);
+  const items = [
+    { label: "Alert class", value: meta.alertCode },
+    { label: "Priority", value: meta.priority.split(" — ")[0] },
+    { label: "Response window", value: meta.responseWindow },
+    { label: "Elapsed", value: `${(elapsed / 1000).toFixed(1)} s` },
+  ];
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-white/10 border border-white/10">
-      {[
-        { label: "Alert Class", value: meta.alertCode },
-        { label: "Priority", value: meta.priority.split(" — ")[0] },
-        { label: "Response Window", value: meta.responseWindow },
-        { label: "Pipeline Time", value: `${(elapsed / 1000).toFixed(1)}s` },
-      ].map((m) => (
-        <div key={m.label} className="bg-black p-4">
-          <p className="text-[9px] tracking-wider uppercase text-white/35">{m.label}</p>
-          <p className="mt-1 text-[12px] sm:text-[13px] font-medium text-white/80">{m.value}</p>
+    <div className="grid grid-cols-2 sm:grid-cols-4 border border-[var(--demo-border)]">
+      {items.map((m) => (
+        <div key={m.label} className="px-4 py-3 border-r border-b sm:border-b-0 border-[var(--demo-border-subtle)] last:border-r-0 bg-[var(--demo-surface)]">
+          <p className="demo-label">{m.label}</p>
+          <p className="mt-1 text-[12px] font-medium font-mono text-[var(--demo-text)]">{m.value}</p>
         </div>
       ))}
     </div>
@@ -652,11 +497,16 @@ export default function DemoPage() {
     [asset, severity, phase]
   );
   const inventory = useMemo(() => buildInventory(asset, severity), [asset, severity]);
-  const logs = useMemo(() => buildAgentLogs(asset, severity, buildManualMatch(asset, severity), inventory), [asset, severity, inventory]);
+  const logs = useMemo(
+    () => buildAgentLogs(asset, severity, buildManualMatch(asset, severity), inventory),
+    [asset, severity, inventory]
+  );
   const workOrder = useMemo(
     () => (phaseIndex(phase) >= phaseIndex("draft") ? buildWorkOrder(asset, severity, inventory) : null),
     [asset, severity, inventory, phase]
   );
+
+  const telemetryActive = phaseIndex(phase) >= phaseIndex("telemetry");
 
   const clearTimers = useCallback(() => {
     timersRef.current.forEach(clearTimeout);
@@ -719,19 +569,19 @@ export default function DemoPage() {
   return (
     <>
       <DemoNav />
-      <main className="min-h-screen pt-[calc(3.5rem+env(safe-area-inset-top))] sm:pt-[calc(4rem+env(safe-area-inset-top))] pb-16">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 space-y-4 sm:space-y-6">
-          <div className="py-6 sm:py-8 border-b border-white/5">
-            <p className="text-[10px] sm:text-[11px] tracking-[0.22em] uppercase text-white/45">Pilot Simulator</p>
-            <h1 className="mt-2 text-[clamp(1.5rem,4vw,2.75rem)] font-bold uppercase tracking-tight max-w-3xl">
-              Closed-Loop Maintenance Execution
+      <main className="pt-14 pb-12">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 space-y-4">
+          <div className="py-6 border-b border-[var(--demo-border-subtle)]">
+            <p className="demo-label">90-day pilot · Rheinland POC</p>
+            <h1 className="mt-1 text-xl sm:text-2xl font-semibold text-[var(--demo-text)]">
+              Closed-loop maintenance execution
             </h1>
-            <p className="mt-3 text-[13px] sm:text-[15px] text-white/55 max-w-2xl leading-relaxed">
-              Interactive sandbox for the 90-day Rheinland proof of concept. Demonstrates read-only telemetry
-              ingestion, agent reasoning, SAP inventory lookup, and draft work order composition with mandatory
-              human sign-off.
+            <p className="mt-2 text-[13px] text-[var(--demo-muted)] max-w-2xl leading-relaxed">
+              Read-only telemetry ingestion, agent reasoning, SAP inventory lookup, and draft work order output with mandatory engineer release.
             </p>
           </div>
+
+          <TwinViewer3D assetId={assetId} severity={severity} active={telemetryActive || phase !== "idle"} />
 
           <ControlBar
             assetId={assetId}
@@ -754,38 +604,23 @@ export default function DemoPage() {
           <PhaseTimeline phase={phase} />
           <MetricsBar phase={phase} severity={severity} elapsed={elapsed} />
 
-          <div className="grid lg:grid-cols-3 gap-4 sm:gap-5">
+          <div className="grid lg:grid-cols-3 gap-4">
             <TelemetryPanel assetId={assetId} severity={severity} phase={phase} />
-            <AgentPanel
-              logs={logs}
-              visibleCount={visibleLogs}
-              phase={phase}
-              manual={manual}
-              reelinId={workOrder?.reelinId ?? null}
-            />
+            <AgentPanel logs={logs} visibleCount={visibleLogs} phase={phase} manual={manual} reelinId={workOrder?.reelinId ?? null} />
             <ErpPanel workOrder={workOrder} phase={phase} inventory={inventory} approved={approved} />
           </div>
 
-          <section className="border border-white/10 p-5 sm:p-8 mt-4">
-            <p className="text-[10px] tracking-[0.2em] uppercase text-white/40">Proposal Anchors</p>
-            <div className="mt-4 grid sm:grid-cols-3 gap-6 sm:gap-8">
+          <section className="demo-panel p-5 sm:p-6">
+            <p className="demo-label">Proposal documentation</p>
+            <div className="mt-4 grid sm:grid-cols-3 gap-6">
               {[
-                {
-                  title: "Technical Verification",
-                  body: "Proves read-only OT/IT mapping in sandbox. No live plant controls touched.",
-                },
-                {
-                  title: "Safety Guarantee",
-                  body: "Agent never releases SAP PM orders. Draft only — engineer authorization required.",
-                },
-                {
-                  title: "Audit Compliance",
-                  body: "Every action sealed with Reelin ID for Asset Administration Shell traceability.",
-                },
+                { title: "Technical verification", body: "Read-only OT/IT mapping in isolated sandbox. No live DCS writes." },
+                { title: "Safety guarantee", body: "Agent stops at SAP draft. Engineer authorization required for release." },
+                { title: "Audit trail", body: "Reelin ID logs every agent action for AAS compliance export." },
               ].map((item) => (
                 <div key={item.title}>
-                  <h3 className="text-[12px] font-semibold tracking-wide uppercase">{item.title}</h3>
-                  <p className="mt-2 text-[13px] text-white/50 leading-relaxed">{item.body}</p>
+                  <h3 className="text-[12px] font-semibold text-[var(--demo-text)]">{item.title}</h3>
+                  <p className="mt-1.5 text-[12px] text-[var(--demo-muted)] leading-relaxed">{item.body}</p>
                 </div>
               ))}
             </div>
@@ -793,19 +628,12 @@ export default function DemoPage() {
         </div>
       </main>
 
-      <footer className="border-t border-white/5 py-8 mt-8">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-2.5">
-            <LogoMark className="w-4 h-4 text-white/70" />
-            <p className="text-[11px] tracking-[0.25em] uppercase text-white/45">Operadroom · Sandbox Demo</p>
-          </div>
-          <div className="flex gap-6 text-[11px] tracking-[0.14em] uppercase text-white/45">
-            <Link href="/" className="hover:text-white transition-colors">
-              Landing
-            </Link>
-            <a href="mailto:hi@reelin.ai" className="hover:text-white transition-colors">
-              Contact
-            </a>
+      <footer className="border-t border-[var(--demo-border)] py-6">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-[11px] text-[var(--demo-muted)]">
+          <span>Operadroom pilot simulator · Reelin AI Inc.</span>
+          <div className="flex gap-4">
+            <Link href="/" className="hover:text-[var(--demo-text)]">Landing</Link>
+            <a href="mailto:hi@reelin.ai" className="hover:text-[var(--demo-text)]">Contact</a>
           </div>
         </div>
       </footer>
