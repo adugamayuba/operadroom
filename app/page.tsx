@@ -478,7 +478,7 @@ function Footer() {
           </div>
           <p className="mt-2 text-[12px] text-white/40">A Reelin AI product</p>
         </div>
-        <div className="flex flex-wrap gap-8 text-[11px] tracking-[0.14em] uppercase text-white/45">
+        <div className="flex flex-wrap gap-6 sm:gap-8 text-[11px] tracking-[0.14em] uppercase text-white/45">
           <a
             href="https://reelin.ai"
             onClick={() => trackEvent("outbound_click", { destination: "reelin_ai" })}
@@ -487,6 +487,15 @@ function Footer() {
             rel="noopener noreferrer"
           >
             Reelin AI
+          </a>
+          <a
+            href="https://reelin.id"
+            onClick={() => trackEvent("outbound_click", { destination: "reelin_id" })}
+            className="hover:text-white transition-colors"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Reelin ID
           </a>
           <a
             href={CONTACT_MAILTO}
@@ -523,7 +532,7 @@ export default function Home() {
         <SplitSection
           label="The Solution"
           title="Autonomous Agents Between Twin and ERP"
-          body="Operadroom ports the same agent architecture proven in Swiftdroom — read, reason, act across platforms — onto industrial maintenance workflows. Predictive monitoring becomes closed-loop digital execution."
+          body="Operadroom runs on the Reelin agent architecture — read, reason, act across systems — applied to industrial maintenance workflows. Predictive monitoring becomes closed-loop digital execution."
           reverse
           visual={
             <div className="space-y-4">
