@@ -126,48 +126,25 @@ function EmailToast({
   );
 }
 
-function PilotWedgePanel() {
-  const steps = [
-    { role: "C3 AI · site stack", action: "Finds the problem", detail: "Reliability alert via API" },
-    { role: "Operadroom", action: "Finds the solution", detail: "Records · procedure · SAP draft" },
-    { role: "Engineer · Reelin ID", action: "Owns release", detail: "Notes become agent memory" },
-  ];
-  return (
-    <div className="demo-panel p-4 sm:p-5">
-      <p className="demo-label">Pilot architecture · Rheinland wedge</p>
-      <p className="mt-1 text-[13px] text-[var(--demo-text)] max-w-3xl">
-        Shell already has sensors, PI Historian, and C3 Reliability (expanded partnership, June 2026). Operadroom connects via site API — we do not replace detection. When C3 raises an alert, our agent searches digitized history, selects the fix, drafts SAP PM, and stores every engineer note in a personal Reelin ID agent.
-      </p>
-      <div className="grid sm:grid-cols-3 gap-3 mt-4">
-        {steps.map((s) => (
-          <div key={s.role} className="demo-field-focus p-3">
-            <p className="text-[10px] text-[var(--demo-muted)] uppercase tracking-wider">{s.role}</p>
-            <p className="text-[13px] font-medium mt-1">{s.action}</p>
-            <p className="text-[11px] text-[var(--demo-muted)] mt-1">{s.detail}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function IntegrationsBar() {
   const systems = [
-    { name: "C3 AI Reliability", status: "Alert source", detail: "Detection · API ingest", field: "demo-field-warn" as const },
-    { name: "PI / Cognite", status: "Connected", detail: "Site telemetry · read-only", field: "demo-field-ok" as const },
-    { name: "Operadroom", status: "Active", detail: "Solution agent · records", field: "demo-field-focus" as const },
-    { name: "SAP PM / MM", status: "Ready", detail: "Draft WO · HITL release", field: "demo-field-ok" as const },
-    { name: "Reelin ID", status: "Memory", detail: "Audit · engineer agents", field: "demo-field-ok" as const },
+    { name: "Cognite CDF", status: "Connected", detail: "Asset twin sync" },
+    { name: "PI Historian", status: "Streaming", detail: "1.2s cycle" },
+    { name: "SAP PM / MM", status: "Ready", detail: "HITL enforced" },
+    { name: "Reelin ID", status: "Active", detail: "Audit trail" },
   ];
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-5 border border-[var(--demo-border)] bg-[var(--demo-surface)]">
+    <div className="grid grid-cols-2 lg:grid-cols-4 border border-[var(--demo-border)] bg-[var(--demo-surface)]">
       {systems.map((s) => (
         <div key={s.name} className="px-4 py-2.5 border-r border-[var(--demo-border-subtle)] last:border-r-0 flex items-center justify-between gap-2">
           <div className="min-w-0">
             <p className="text-[11px] font-medium truncate">{s.name}</p>
             <p className="text-[10px] text-[var(--demo-muted)] truncate">{s.detail}</p>
           </div>
-          <span className={`${s.field} demo-pill shrink-0 text-[10px]`}>{s.status}</span>
+          <span className="demo-field-ok demo-pill shrink-0 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--demo-ok)] demo-live-pulse" />
+            {s.status}
+          </span>
         </div>
       ))}
     </div>
@@ -256,7 +233,7 @@ function FacilityMonitorGrid({ summaries }: { summaries: AssetHealthSummary[] })
       <div className="px-4 py-3 border-b border-[var(--demo-border-subtle)] flex justify-between items-center">
         <div>
           <p className="demo-label">Facility telemetry matrix</p>
-          <p className="demo-heading mt-0.5">All assets · site API feed</p>
+          <p className="demo-heading mt-0.5">All assets · simultaneous scan</p>
         </div>
         <span className="text-[10px] font-mono text-[var(--demo-muted)]">{summaries.length} streams</span>
       </div>
@@ -299,18 +276,18 @@ function FacilityMonitorGrid({ summaries }: { summaries: AssetHealthSummary[] })
 
 function PhaseTimeline({ phase }: { phase: SimPhase }) {
   const steps = [
-    { key: "detecting", label: "Ingest alert" },
-    { key: "records", label: "Find records" },
-    { key: "analyze", label: "Find fix" },
-    { key: "select", label: "Select procedure" },
-    { key: "inventory", label: "Spares" },
-    { key: "review", label: "Engineer release" },
+    { key: "detecting", label: "Detect" },
+    { key: "records", label: "Records" },
+    { key: "analyze", label: "Analyze" },
+    { key: "select", label: "Select fix" },
+    { key: "inventory", label: "Inventory" },
+    { key: "review", label: "Review" },
   ];
   const current = phaseIndex(phase);
 
   return (
     <div className="demo-panel p-4">
-      <p className="demo-label mb-3">Solution agent pipeline · after C3 alert</p>
+      <p className="demo-label mb-3">Autonomous response pipeline</p>
       <div className="flex gap-1">
         {steps.map((step) => {
           const idx = phaseIndex(step.key as SimPhase);
@@ -405,7 +382,7 @@ function EngineerReleasePanel({
       <div className="border demo-field-warn px-4 py-3 mb-4">
         <p className="text-[12px] font-medium">Engineer release · HITL-01</p>
         <p className="text-[11px] text-[var(--demo-muted)] mt-1">
-          Review draft work order for <span className="font-mono">{assetTag}</span> before SAP RELEASE. Notes are stored in this engineer&apos;s Reelin ID agent — 15 years of field knowledge, compounding with every release.
+          Review draft work order for <span className="font-mono">{assetTag}</span> before SAP RELEASE. Add any field observations or constraints below.
         </p>
       </div>
 
@@ -429,7 +406,7 @@ function EngineerReleasePanel({
             placeholder="e.g. Confirm LOTO with shift supervisor before start. Crew B available after 06:00. Vibration trending noted on adjacent train."
             className="w-full border border-[var(--demo-border)] bg-[var(--demo-surface)] px-3 py-2 text-[12px] resize-y min-h-[96px] focus:outline-none focus:border-[var(--demo-focus)]"
           />
-          <p className="text-[10px] text-[var(--demo-faint)] mt-1.5">Notes append to the work order, seal the audit trail, and train the engineer&apos;s personal agent for the next incident.</p>
+          <p className="text-[10px] text-[var(--demo-faint)] mt-1.5">Notes are appended to the work order long text and sealed in Reelin ID audit trail.</p>
         </div>
       </div>
 
@@ -526,14 +503,12 @@ export default function DemoPage() {
       <main className="pt-14 pb-12">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 space-y-4">
           <div className="py-5 border-b border-[var(--demo-border-subtle)]">
-            <p className="demo-label">Rheinland POC · maintenance execution layer</p>
-            <h1 className="mt-1 text-xl font-semibold">C3 finds the problem · Operadroom finds the solution</h1>
-            <p className="mt-2 text-[13px] text-[var(--demo-muted)] max-w-3xl">
-              Site data streams via PI and Cognite APIs. C3 Reliability raises the alert. Operadroom ingests it, searches digitized maintenance history, selects the procedure, drafts SAP PM, and captures engineer knowledge in Reelin ID — without autonomous SAP release.
+            <p className="demo-label">Rheinland POC · live operations sandbox</p>
+            <h1 className="mt-1 text-xl font-semibold">Facility-wide monitoring · on-demand incident injection</h1>
+            <p className="mt-2 text-[13px] text-[var(--demo-muted)] max-w-2xl">
+              All {sys.totalAssets} assets stream continuously. Click any equipment in the 3D twin or sidebar, inject an anomaly on the focused asset, and watch autonomous detection through work order drafting.
             </p>
           </div>
-
-          <PilotWedgePanel />
 
           <IntegrationsBar />
           <SystemStatusBar
@@ -564,12 +539,12 @@ export default function DemoPage() {
                 <p className="demo-label">Control</p>
                 <h2 className="text-base font-semibold mt-1">{FACILITY.name}</h2>
                 <p className="text-[11px] text-[var(--demo-muted)] mt-1">
-                  Focus asset: <span className="font-mono">{sys.asset.tag}</span> · simulate C3 alert ingest on selection
+                  Focus asset: <span className="font-mono">{sys.asset.tag}</span> · inject applies to selection only
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <button type="button" disabled={!sys.canTrigger} onClick={handleTrigger} className="demo-btn-primary">
-                  {sys.mode === "incident" ? "Solution agent running…" : "Simulate C3 alert ingest"}
+                  {sys.mode === "incident" ? "Response in progress…" : "Inject anomaly"}
                 </button>
                 <button type="button" onClick={sys.resetMonitoring} className="demo-btn-secondary">
                   Return to monitoring
@@ -606,7 +581,7 @@ export default function DemoPage() {
                 </select>
               </div>
               <div>
-                <label className="demo-label block mb-2">C3 alert severity (simulated)</label>
+                <label className="demo-label block mb-2">Inject severity</label>
                 <div className="grid grid-cols-3 gap-2">
                   {(["advisory", "warning", "critical"] as Severity[]).map((s) => (
                     <button
@@ -650,8 +625,8 @@ export default function DemoPage() {
             <div className="demo-panel flex flex-col min-h-[360px]">
               <div className="px-4 py-3 border-b border-[var(--demo-border-subtle)] flex justify-between">
                 <div>
-                  <p className="demo-label">01 · Site data</p>
-                  <p className="demo-heading mt-0.5">PI stream · context only</p>
+                  <p className="demo-label">01 · Telemetry</p>
+                  <p className="demo-heading mt-0.5">Focused asset · PI stream</p>
                 </div>
                 <span className={`text-[10px] font-mono demo-pill ${sys.mode === "monitoring" ? "demo-field-ok" : "demo-field-warn"}`}>
                   {sys.mode === "monitoring" ? "NORM" : meta.alertCode}
@@ -676,11 +651,11 @@ export default function DemoPage() {
             <div className="demo-panel flex flex-col min-h-[360px]">
               <div className="px-4 py-3 border-b border-[var(--demo-border-subtle)] flex justify-between">
                 <div>
-                  <p className="demo-label">02 · Solution agent</p>
-                  <p className="demo-heading mt-0.5">Operadroom · records to release</p>
+                  <p className="demo-label">02 · Agent</p>
+                  <p className="demo-heading mt-0.5">Operadroom</p>
                 </div>
                 <span className="text-[11px] text-[var(--demo-muted)]">
-                  {sys.mode === "monitoring" ? "Idle · awaiting C3 alert" : "Executing solution loop"}
+                  {sys.mode === "monitoring" ? "Watching all assets" : "Executing"}
                 </span>
               </div>
               <div className="flex-1 p-4 space-y-2 overflow-y-auto demo-scroll">

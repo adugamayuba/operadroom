@@ -102,10 +102,10 @@ export interface AssetScenario {
 }
 
 export const FACILITY = {
-  name: "Energy and Chemicals Park Rheinland",
+  name: "Rheinland Refinery Complex",
   code: "SH-RHN-01",
   region: "North Rhine-Westphalia, Germany",
-  integration: "C3 AI Reliability · PI Historian · Cognite CDF · SAP S/4HANA PM · Reelin ID",
+  integration: "SAP S/4HANA PM · IBM Maximo · Cognite Data Fusion",
 };
 
 const t = (

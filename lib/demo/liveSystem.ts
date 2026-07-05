@@ -203,28 +203,21 @@ export function buildLiveAgentLogs(
   const rejected = fixes.filter((f) => !f.selected);
 
   return [
-    {
-      id: "1",
-      phase: "detecting",
-      timestamp: "Live",
-      level: "warn",
-      message: `C3 Reliability alert ingested via site API — ${asset.tag}`,
-      detail: `${meta.alertCode} · POST /api/v1/alerts · Operadroom does not replace C3 detection`,
-    },
-    { id: "2", phase: "ingest", timestamp: "T+0.6s", level: "info", message: "Alert mapped to SAP equipment master", detail: `${asset.functionalLocation} · PI Historian context attached (read-only)` },
-    { id: "3", phase: "ingest", timestamp: "T+1.1s", level: "info", message: "Site telemetry correlated for solution search", detail: "14-day PI trend confirms degradation · Cognite asset context loaded" },
-    { id: "4", phase: "records", timestamp: "T+1.8s", level: "action", message: "Historical maintenance corpus queried", detail: `847 digitized records · 12 prior WOs · 3 OEM manuals · field notes indexed` },
-    { id: "5", phase: "records", timestamp: "T+2.4s", level: "success", message: "Past solutions retrieved from site knowledge base", detail: `${manual.source} · ${manual.section}` },
-    { id: "6", phase: "diagnose", timestamp: "T+3.0s", level: "action", message: "Root cause matched to historical fixes", detail: `Primary: ${asset.kind} degradation · Confidence ${(manual.confidence * 100).toFixed(0)}%` },
-    { id: "7", phase: "analyze", timestamp: "T+3.8s", level: "action", message: `Evaluating ${fixes.length} corrective procedures from records`, detail: rejected.map((f) => `${f.title} (${(f.score * 100).toFixed(0)}%)`).join(" · ") },
+    { id: "1", phase: "detecting", timestamp: "Live", level: "warn", message: `Threshold breach on ${asset.tag}`, detail: `${meta.alertCode} · Cognite stream · Auto-escalation enabled` },
+    { id: "2", phase: "ingest", timestamp: "T+0.6s", level: "info", message: "Alert normalized to SAP equipment master", detail: `${asset.functionalLocation} · Duplicate check passed` },
+    { id: "3", phase: "ingest", timestamp: "T+1.1s", level: "info", message: "PI Historian trend correlated", detail: "14-day slope confirms degradation · Not transient spike" },
+    { id: "4", phase: "records", timestamp: "T+1.8s", level: "action", message: "Internal maintenance records queried", detail: `847 documents · 12 prior WOs for ${asset.tag} · 3 OEM manuals` },
+    { id: "5", phase: "records", timestamp: "T+2.4s", level: "success", message: "Relevant corpus retrieved", detail: `${manual.source} · ${manual.section}` },
+    { id: "6", phase: "diagnose", timestamp: "T+3.0s", level: "action", message: "Root cause model executed", detail: `Primary: ${asset.kind} degradation · Confidence ${(manual.confidence * 100).toFixed(0)}%` },
+    { id: "7", phase: "analyze", timestamp: "T+3.8s", level: "action", message: `Evaluating ${fixes.length} corrective procedures`, detail: rejected.map((f) => `${f.title} (${(f.score * 100).toFixed(0)}%)`).join(" · ") },
     { id: "8", phase: "analyze", timestamp: "T+4.6s", level: "info", message: "Multi-criteria analysis: downtime, spares, safety, SLA", detail: `Response window ${meta.responseWindow} · Plant load 94%` },
-    { id: "9", phase: "select", timestamp: "T+5.2s", level: "success", message: `Selected procedure: ${selected.title}`, detail: `${selected.source} · Score ${(selected.score * 100).toFixed(0)}% · Est. ${selected.downtimeHours}h downtime` },
+    { id: "9", phase: "select", timestamp: "T+5.2s", level: "success", message: `Selected: ${selected.title}`, detail: `${selected.source} · Score ${(selected.score * 100).toFixed(0)}% · Est. ${selected.downtimeHours}h downtime` },
     { id: "10", phase: "inventory", timestamp: "T+5.9s", level: "action", message: "SAP MM availability check", detail: `${inventory.length} BOM lines · ${inventory.filter((i) => i.status === "procure").length} PR draft(s)` },
     { id: "11", phase: "inventory", timestamp: "T+6.4s", level: inventory.some((i) => i.status === "procure") ? "warn" : "success", message: inventory.some((i) => i.status === "procure") ? "Partial stock — procurement draft created" : "All spares reserved" },
-    { id: "12", phase: "draft", timestamp: "T+7.1s", level: "action", message: "SAP PM work order draft composed", detail: `${meta.orderType} · ${meta.priority} · RELEASE blocked` },
+    { id: "12", phase: "draft", timestamp: "T+7.1s", level: "action", message: "SAP PM work order composed", detail: `${meta.orderType} · ${meta.priority}` },
     { id: "13", phase: "draft", timestamp: "T+7.8s", level: "success", message: "Operations linked to selected procedure", detail: selected.title },
-    { id: "14", phase: "review", timestamp: "T+8.4s", level: "info", message: "Awaiting engineer release (HITL-01)", detail: "No autonomous SAP RELEASE · Engineer notes feed Reelin ID agent memory" },
-    { id: "15", phase: "review", timestamp: "T+8.6s", level: "success", message: "Session bound to Reelin ID audit trail", detail: "Every action stored for compliance and future agent retrieval" },
+    { id: "14", phase: "review", timestamp: "T+8.4s", level: "info", message: "Draft saved — RELEASE blocked", detail: "HITL-01 · Awaiting maintenance engineer authorization" },
+    { id: "15", phase: "review", timestamp: "T+8.6s", level: "success", message: "Reelin ID audit trail sealed", detail: "Export ready for compliance" },
   ];
 }
 
@@ -233,6 +226,6 @@ export const MONITORING_LOG = (scanCount: number, assetCount: number): import(".
   phase: "monitoring",
   timestamp: "Live",
   level: "info",
-  message: `Site data connected — ${assetCount} assets via PI / Cognite APIs`,
-  detail: `Awaiting C3 Reliability alerts · Operadroom idle until alert ingest · scan ${scanCount}`,
+  message: `Facility-wide monitoring active — ${assetCount} assets`,
+  detail: `PI Historian scan cycle ${scanCount} · Cognite CDF · All tags within baseline`,
 });
