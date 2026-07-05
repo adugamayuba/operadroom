@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  ASSET_LIST,
   ASSETS,
   buildInventory,
   buildManualMatch,
@@ -12,13 +13,16 @@ import {
   type SimPhase,
 } from "@/lib/demo/scenarios";
 import {
+  buildFacilitySnapshot,
   buildFixCandidates,
   buildLiveAgentLogs,
-  buildLiveReadings,
   MONITORING_LOG,
   RESPONSE_STEPS,
+  summarizeAsset,
+  type AssetHealthSummary,
   type FixCandidate,
   type LiveReadingState,
+  type MarkerStatus,
   type SystemMode,
 } from "@/lib/demo/liveSystem";
 
@@ -43,8 +47,13 @@ export function phaseIndex(phase: SimPhase): number {
   return order.indexOf(phase);
 }
 
+function historyKey(assetId: AssetId, label: string) {
+  return `${assetId}::${label}`;
+}
+
 export function useLiveSystem(initialAsset: AssetId = "p2047") {
-  const [assetId, setAssetId] = useState<AssetId>(initialAsset);
+  const [selectedAssetId, setSelectedAssetId] = useState<AssetId>(initialAsset);
+  const [incidentAssetId, setIncidentAssetId] = useState<AssetId>(initialAsset);
   const [severity, setSeverity] = useState<Severity>("warning");
   const [mode, setMode] = useState<SystemMode>("monitoring");
   const [phase, setPhase] = useState<SimPhase>("monitoring");
@@ -54,7 +63,11 @@ export function useLiveSystem(initialAsset: AssetId = "p2047") {
   const [elapsed, setElapsed] = useState(0);
   const [lastScan, setLastScan] = useState(new Date());
   const [uptimeSec, setUptimeSec] = useState(0);
-  const [readings, setReadings] = useState<LiveReadingState[]>([]);
+  const [scanCount, setScanCount] = useState(0);
+  const [facilityReadings, setFacilityReadings] = useState<Record<AssetId, LiveReadingState[]>>(() => {
+    const snap = buildFacilitySnapshot(initialAsset, initialAsset, "warning", "monitoring", 0);
+    return snap;
+  });
   const [historyMap, setHistoryMap] = useState<Record<string, number[]>>({});
 
   const timersRef = useRef<number[]>([]);
@@ -62,8 +75,35 @@ export function useLiveSystem(initialAsset: AssetId = "p2047") {
   const incidentStartRef = useRef(0);
   const rampRef = useRef(0);
   const modeRef = useRef<SystemMode>("monitoring");
+  const incidentAssetRef = useRef<AssetId>(initialAsset);
+  const selectedAssetRef = useRef<AssetId>(initialAsset);
+  const severityRef = useRef<Severity>("warning");
 
-  const asset = ASSETS[assetId];
+  const asset = ASSETS[selectedAssetId];
+  const selectedReadings = facilityReadings[selectedAssetId] ?? [];
+
+  const assetSummaries: AssetHealthSummary[] = useMemo(
+    () =>
+      ASSET_LIST.map((a) =>
+        summarizeAsset(
+          a,
+          facilityReadings[a.id] ?? [],
+          selectedAssetId,
+          incidentAssetId,
+          mode
+        )
+      ),
+    [facilityReadings, selectedAssetId, incidentAssetId, mode]
+  );
+
+  const markerStatuses: Record<AssetId, MarkerStatus> = useMemo(() => {
+    const out = {} as Record<AssetId, MarkerStatus>;
+    assetSummaries.forEach((s) => {
+      out[s.id] = s.status === "selected" ? "selected" : s.status;
+    });
+    return out;
+  }, [assetSummaries]);
+
   const manual = useMemo(
     () => (phaseIndex(phase) >= phaseIndex("diagnose") ? buildManualMatch(asset, severity) : null),
     [asset, severity, phase]
@@ -79,6 +119,26 @@ export function useLiveSystem(initialAsset: AssetId = "p2047") {
     [asset, severity, inventory, phase]
   );
 
+  const readingsWithHistory = useMemo(
+    () =>
+      selectedReadings.map((r) => ({
+        ...r,
+        history: historyMap[historyKey(selectedAssetId, r.label)] ?? [],
+      })),
+    [selectedReadings, historyMap, selectedAssetId]
+  );
+
+  const allReadingsWithHistory = useMemo(() => {
+    const out = {} as Record<AssetId, LiveReadingState[]>;
+    ASSET_LIST.forEach((a) => {
+      out[a.id] = (facilityReadings[a.id] ?? []).map((r) => ({
+        ...r,
+        history: historyMap[historyKey(a.id, r.label)] ?? [],
+      }));
+    });
+    return out;
+  }, [facilityReadings, historyMap]);
+
   const clearTimers = useCallback(() => {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
@@ -93,7 +153,6 @@ export function useLiveSystem(initialAsset: AssetId = "p2047") {
     setVisibleLogs(0);
     incidentStartRef.current = Date.now();
     setPhase("detecting");
-    setMode("incident");
 
     logIntervalRef.current = window.setInterval(() => {
       setVisibleLogs((v) => Math.min(logs.length, v + 1));
@@ -123,6 +182,8 @@ export function useLiveSystem(initialAsset: AssetId = "p2047") {
     if (modeRef.current !== "monitoring") return;
     clearTimers();
     setApproved(false);
+    setIncidentAssetId(selectedAssetRef.current);
+    incidentAssetRef.current = selectedAssetRef.current;
     setRamp(0);
     rampRef.current = 0;
     setMode("incident");
@@ -158,7 +219,8 @@ export function useLiveSystem(initialAsset: AssetId = "p2047") {
   }, [clearTimers]);
 
   const selectAsset = useCallback((id: AssetId) => {
-    setAssetId(id);
+    setSelectedAssetId(id);
+    selectedAssetRef.current = id;
   }, []);
 
   const approveWorkOrder = useCallback(() => {
@@ -168,51 +230,66 @@ export function useLiveSystem(initialAsset: AssetId = "p2047") {
     modeRef.current = "resolved";
   }, []);
 
-  // Live telemetry tick
+  useEffect(() => {
+    selectedAssetRef.current = selectedAssetId;
+  }, [selectedAssetId]);
+
+  useEffect(() => {
+    severityRef.current = severity;
+  }, [severity]);
+
+  // Live facility-wide telemetry tick
   useEffect(() => {
     const id = window.setInterval(() => {
       setUptimeSec((u) => u + 1);
+      setScanCount((c) => c + 1);
       setLastScan(new Date());
-      const currentMode = modeRef.current;
-      const r = rampRef.current;
-      const next = buildLiveReadings(asset, severity, currentMode === "monitoring" ? "monitoring" : "incident", r);
+
+      const snap = buildFacilitySnapshot(
+        incidentAssetRef.current,
+        selectedAssetRef.current,
+        severityRef.current,
+        modeRef.current,
+        rampRef.current
+      );
+
       setHistoryMap((prev) => {
         const updated = { ...prev };
-        next.forEach((reading) => {
-          updated[reading.label] = [...(updated[reading.label] ?? []), reading.value].slice(-24);
+        ASSET_LIST.forEach((a) => {
+          (snap[a.id] ?? []).forEach((reading) => {
+            const key = historyKey(a.id, reading.label);
+            updated[key] = [...(updated[key] ?? []), reading.value].slice(-20);
+          });
         });
         return updated;
       });
-      setReadings(next);
+      setFacilityReadings(snap);
     }, TICK_MS);
     return () => clearInterval(id);
-  }, [asset, severity]);
-
-  useEffect(() => {
-    setReadings(
-      buildLiveReadings(asset, severity, "monitoring", 0).map((r) => ({
-        ...r,
-        history: historyMap[r.label] ?? [],
-      }))
-    );
-  }, [assetId]);
+  }, []);
 
   useEffect(() => () => clearTimers(), [clearTimers]);
 
+  const normalCount = assetSummaries.filter((s) => s.status === "normal" || s.status === "selected").length;
   const displayLogs: AgentLogEntry[] =
-    mode === "monitoring" ? [MONITORING_LOG] : logs;
-
-  const isResponding = mode === "incident" && phaseIndex(phase) >= phaseIndex("detecting") && phase !== "review" && phase !== "approved";
+    mode === "monitoring" ? [MONITORING_LOG(scanCount, ASSET_LIST.length)] : logs;
 
   return {
-    assetId,
+    assetId: selectedAssetId,
+    incidentAssetId,
     asset,
     severity,
     setSeverity,
     mode,
     phase,
     ramp,
-    readings: readings.map((r) => ({ ...r, history: historyMap[r.label] ?? r.history })),
+    readings: readingsWithHistory,
+    allReadings: allReadingsWithHistory,
+    assetSummaries,
+    markerStatuses,
+    normalCount,
+    totalAssets: ASSET_LIST.length,
+    scanCount,
     logs: displayLogs,
     visibleLogs: mode === "monitoring" ? 1 : visibleLogs,
     manual,
@@ -223,7 +300,6 @@ export function useLiveSystem(initialAsset: AssetId = "p2047") {
     elapsed,
     lastScan,
     uptimeSec,
-    isResponding,
     canTrigger: mode === "monitoring" || mode === "resolved",
     canApprove: phase === "review" && !approved,
     triggerAnomaly,

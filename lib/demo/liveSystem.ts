@@ -1,5 +1,5 @@
-import type { AssetKind, AssetScenario, InventoryLine, ManualMatch, Severity, SimPhase } from "./scenarios";
-import { getSeverityMeta } from "./scenarios";
+import type { AssetId, AssetKind, AssetScenario, InventoryLine, ManualMatch, Severity, SimPhase } from "./scenarios";
+import { ASSET_LIST, ASSETS, getSeverityMeta } from "./scenarios";
 
 export type SystemMode = "monitoring" | "incident" | "resolved";
 
@@ -14,14 +14,20 @@ export interface LiveReadingState {
   history: number[];
 }
 
-export interface FixCandidate {
-  id: string;
-  title: string;
-  source: string;
-  score: number;
-  downtimeHours: number;
-  selected?: boolean;
+export interface AssetHealthSummary {
+  id: AssetId;
+  tag: string;
+  name: string;
+  unit: string;
+  kind: AssetKind;
+  status: "normal" | "selected" | "incident" | "breached";
+  primaryLabel: string;
+  primaryValue: number;
+  primaryUnit: string;
+  breachedCount: number;
 }
+
+export type MarkerStatus = "normal" | "selected" | "incident" | "breached";
 
 export function jitter(value: number, pct = 0.018): number {
   const delta = value * pct * (Math.random() * 2 - 1);
@@ -36,18 +42,15 @@ export function buildLiveReadings(
   asset: AssetScenario,
   severity: Severity,
   mode: SystemMode,
-  ramp: number
+  ramp: number,
+  asIncident = mode === "incident"
 ): LiveReadingState[] {
   return asset.telemetry.map((reading) => {
-    const target =
-      mode === "incident" ? reading.values[severity] : reading.baseline;
-    const value =
-      mode === "incident"
-        ? lerp(reading.baseline, target, ramp)
-        : jitter(reading.baseline);
+    const target = asIncident ? reading.values[severity] : reading.baseline;
+    const value = asIncident ? lerp(reading.baseline, target, ramp) : jitter(reading.baseline);
     const threshold = reading.threshold[severity];
     const breached =
-      mode === "incident" &&
+      asIncident &&
       ramp > 0.85 &&
       (reading.direction === "above" ? value >= threshold : value <= threshold);
 
@@ -62,6 +65,63 @@ export function buildLiveReadings(
       history: [],
     };
   });
+}
+
+export function buildFacilitySnapshot(
+  incidentAssetId: AssetId,
+  selectedAssetId: AssetId,
+  severity: Severity,
+  mode: SystemMode,
+  ramp: number
+): Record<AssetId, LiveReadingState[]> {
+  const out = {} as Record<AssetId, LiveReadingState[]>;
+  for (const asset of ASSET_LIST) {
+    const isIncident = mode === "incident" && asset.id === incidentAssetId;
+    out[asset.id] = buildLiveReadings(asset, severity, mode, isIncident ? ramp : 0, isIncident);
+  }
+  return out;
+}
+
+export function summarizeAsset(
+  asset: AssetScenario,
+  readings: LiveReadingState[],
+  selectedAssetId: AssetId,
+  incidentAssetId: AssetId,
+  mode: SystemMode
+): AssetHealthSummary {
+  const primary = readings[0];
+  const breachedCount = readings.filter((r) => r.breached).length;
+  let status: AssetHealthSummary["status"] = "normal";
+  if (mode === "incident" && asset.id === incidentAssetId) {
+    status = breachedCount > 0 ? "breached" : "incident";
+  } else if (asset.id === selectedAssetId) {
+    status = "selected";
+  }
+  return {
+    id: asset.id,
+    tag: asset.tag,
+    name: asset.name,
+    unit: asset.unit,
+    kind: asset.kind,
+    status,
+    primaryLabel: primary?.label ?? "—",
+    primaryValue: primary?.value ?? 0,
+    primaryUnit: primary?.unit ?? "",
+    breachedCount,
+  };
+}
+
+export function markerStatusFor(summary: AssetHealthSummary): MarkerStatus {
+  return summary.status;
+}
+
+export interface FixCandidate {
+  id: string;
+  title: string;
+  source: string;
+  score: number;
+  downtimeHours: number;
+  selected?: boolean;
 }
 
 export function buildFixCandidates(asset: AssetScenario, severity: Severity): FixCandidate[] {
@@ -161,11 +221,11 @@ export function buildLiveAgentLogs(
   ];
 }
 
-export const MONITORING_LOG: import("./scenarios").AgentLogEntry = {
+export const MONITORING_LOG = (scanCount: number, assetCount: number): import("./scenarios").AgentLogEntry => ({
   id: "mon",
   phase: "monitoring",
   timestamp: "Live",
   level: "info",
-  message: "Continuous plant monitoring active",
-  detail: "Scanning telemetry across 10 instrumented assets · Read-only OT gateway",
-};
+  message: `Facility-wide monitoring active — ${assetCount} assets`,
+  detail: `PI Historian scan cycle ${scanCount} · Cognite CDF · All tags within baseline`,
+});

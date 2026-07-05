@@ -1,13 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { LogoMark } from "@/components/demo/LogoMark";
 import { useDemoTheme } from "@/components/demo/DemoThemeProvider";
 import { TwinViewer3D } from "@/components/demo/TwinViewer3D";
 import { phaseIndex, useLiveSystem } from "@/components/demo/useLiveSystem";
 import { trackEvent } from "@/lib/analytics";
 import { ASSET_LIST, FACILITY, getSeverityMeta, type Severity, type SimPhase } from "@/lib/demo/scenarios";
-import type { FixCandidate } from "@/lib/demo/liveSystem";
+import type { AssetHealthSummary, FixCandidate } from "@/lib/demo/liveSystem";
 
 function formatUptime(sec: number) {
   const h = Math.floor(sec / 3600);
@@ -20,26 +19,54 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
-function DemoNav({ uptimeSec }: { uptimeSec: number }) {
+function DemoNav({ uptimeSec, scanCount, normalCount, totalAssets }: { uptimeSec: number; scanCount: number; normalCount: number; totalAssets: number }) {
   const { theme, toggle } = useDemoTheme();
   return (
     <header className="fixed top-0 inset-x-0 z-50 bg-[var(--demo-surface)] border-b border-[var(--demo-border)] pt-[env(safe-area-inset-top)]">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
-        <Link href="/" className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           <LogoMark className="w-4 h-4 opacity-80" />
           <span className="text-[13px] font-semibold">Operadroom</span>
-        </Link>
-        <span className="hidden md:block text-[11px] font-mono text-[var(--demo-muted)]">
-          Uptime {formatUptime(uptimeSec)}
-        </span>
-        <div className="flex items-center gap-3">
-          <button type="button" onClick={toggle} className="text-[11px] border border-[var(--demo-border)] px-2.5 py-1 text-[var(--demo-muted)]">
-            {theme === "light" ? "Dark" : "Light"}
-          </button>
-          <Link href="/" className="text-[11px] text-[var(--demo-muted)]">Landing</Link>
+          <span className="hidden sm:inline text-[10px] text-[var(--demo-muted)] border-l border-[var(--demo-border)] pl-2 ml-1">Live demo</span>
         </div>
+        <div className="hidden md:flex items-center gap-4 text-[11px] font-mono text-[var(--demo-muted)]">
+          <span className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--demo-muted)] demo-live-pulse" />
+            {normalCount}/{totalAssets} assets OK
+          </span>
+          <span>Scan #{scanCount}</span>
+          <span>Uptime {formatUptime(uptimeSec)}</span>
+        </div>
+        <button type="button" onClick={toggle} className="text-[11px] border border-[var(--demo-border)] px-2.5 py-1 text-[var(--demo-muted)] shrink-0">
+          {theme === "light" ? "Dark" : "Light"}
+        </button>
       </div>
     </header>
+  );
+}
+
+function IntegrationsBar() {
+  const systems = [
+    { name: "Cognite CDF", status: "Connected", detail: "Asset twin sync" },
+    { name: "PI Historian", status: "Streaming", detail: "1.2s cycle" },
+    { name: "SAP PM / MM", status: "Ready", detail: "HITL enforced" },
+    { name: "Reelin ID", status: "Active", detail: "Audit trail" },
+  ];
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 border border-[var(--demo-border)] bg-[var(--demo-surface)]">
+      {systems.map((s) => (
+        <div key={s.name} className="px-4 py-2.5 border-r border-[var(--demo-border-subtle)] last:border-r-0 flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-[11px] font-medium truncate">{s.name}</p>
+            <p className="text-[10px] text-[var(--demo-muted)] truncate">{s.detail}</p>
+          </div>
+          <span className="text-[10px] font-mono text-[var(--demo-muted)] shrink-0 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--demo-text)] demo-live-pulse" />
+            {s.status}
+          </span>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -47,12 +74,16 @@ function SystemStatusBar({
   mode,
   phase,
   lastScan,
-  assetTag,
+  normalCount,
+  totalAssets,
+  incidentTag,
 }: {
   mode: string;
   phase: SimPhase;
   lastScan: Date;
-  assetTag: string;
+  normalCount: number;
+  totalAssets: number;
+  incidentTag: string | null;
 }) {
   const labels: Record<string, string> = {
     monitoring: "Monitoring",
@@ -63,15 +94,69 @@ function SystemStatusBar({
     <div className="grid grid-cols-2 sm:grid-cols-4 border border-[var(--demo-border)] bg-[var(--demo-surface)]">
       {[
         { label: "System state", value: labels[mode] ?? mode },
-        { label: "Selected asset", value: assetTag },
-        { label: "Pipeline", value: phase === "monitoring" ? "Idle" : phase.replace("_", " ") },
-        { label: "Last scan", value: lastScan.toLocaleTimeString("en-GB") },
+        { label: "Facility health", value: `${normalCount}/${totalAssets} nominal` },
+        { label: "Pipeline", value: phase === "monitoring" ? "Idle · watching all assets" : phase.replace("_", " ") },
+        { label: "Last scan", value: incidentTag ? `${lastScan.toLocaleTimeString("en-GB")} · ${incidentTag}` : lastScan.toLocaleTimeString("en-GB") },
       ].map((item) => (
         <div key={item.label} className="px-4 py-3 border-r border-[var(--demo-border-subtle)] last:border-r-0">
           <p className="demo-label">{item.label}</p>
           <p className="mt-1 text-[12px] font-medium font-mono capitalize">{item.value}</p>
         </div>
       ))}
+    </div>
+  );
+}
+
+function FacilityMonitorGrid({ summaries }: { summaries: AssetHealthSummary[] }) {
+  const statusDot = (s: AssetHealthSummary["status"]) => {
+    if (s === "breached") return "bg-[var(--demo-text)]";
+    if (s === "incident") return "bg-[var(--demo-muted)] demo-live-pulse";
+    if (s === "selected") return "bg-[var(--demo-text)]";
+    return "bg-[var(--demo-border)]";
+  };
+
+  return (
+    <div className="demo-panel overflow-hidden">
+      <div className="px-4 py-3 border-b border-[var(--demo-border-subtle)] flex justify-between items-center">
+        <div>
+          <p className="demo-label">Facility telemetry matrix</p>
+          <p className="demo-heading mt-0.5">All assets · simultaneous scan</p>
+        </div>
+        <span className="text-[10px] font-mono text-[var(--demo-muted)]">{summaries.length} streams</span>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-[11px] min-w-[640px]">
+          <thead>
+            <tr className="text-[var(--demo-faint)] border-b border-[var(--demo-border-subtle)] bg-[var(--demo-surface-2)]">
+              <th className="text-left px-4 py-2 font-normal">Tag</th>
+              <th className="text-left px-2 py-2 font-normal">Unit</th>
+              <th className="text-left px-2 py-2 font-normal">Primary tag</th>
+              <th className="text-right px-2 py-2 font-normal">Value</th>
+              <th className="text-right px-4 py-2 font-normal">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {summaries.map((s) => (
+              <tr key={s.id} className={`border-b border-[var(--demo-border-subtle)] ${s.status === "selected" ? "bg-[var(--demo-accent-soft)]" : ""}`}>
+                <td className="px-4 py-2 font-medium">
+                  <span className="inline-flex items-center gap-2">
+                    <span className={`w-1.5 h-1.5 rounded-full ${statusDot(s.status)}`} />
+                    {s.tag}
+                  </span>
+                </td>
+                <td className="px-2 py-2 text-[var(--demo-muted)]">{s.unit}</td>
+                <td className="px-2 py-2 text-[var(--demo-muted)]">{s.primaryLabel}</td>
+                <td className="px-2 py-2 text-right font-mono tabular-nums">
+                  {s.primaryValue < 1 ? s.primaryValue.toFixed(3) : s.primaryValue.toFixed(1)} {s.primaryUnit}
+                </td>
+                <td className="px-4 py-2 text-right capitalize text-[var(--demo-muted)]">
+                  {s.status === "breached" ? "Alert" : s.status === "incident" ? "Event" : s.status === "selected" ? "Focus" : "OK"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -91,7 +176,7 @@ function PhaseTimeline({ phase }: { phase: SimPhase }) {
     <div className="demo-panel p-4">
       <p className="demo-label mb-3">Autonomous response pipeline</p>
       <div className="flex gap-1">
-        {steps.map((step, i) => {
+        {steps.map((step) => {
           const idx = phaseIndex(step.key as SimPhase);
           const done = current > idx || phase === "approved";
           const active = phase === step.key;
@@ -148,6 +233,7 @@ function Sparkline({ data }: { data: number[] }) {
 export default function DemoPage() {
   const sys = useLiveSystem("p2047");
   const meta = getSeverityMeta(sys.severity);
+  const incidentTag = sys.mode === "incident" ? sys.asset.tag : null;
 
   const handleTrigger = () => {
     trackEvent("demo_trigger_anomaly", { asset: sys.assetId, severity: sys.severity });
@@ -161,41 +247,51 @@ export default function DemoPage() {
 
   return (
     <>
-      <DemoNav uptimeSec={sys.uptimeSec} />
+      <DemoNav uptimeSec={sys.uptimeSec} scanCount={sys.scanCount} normalCount={sys.normalCount} totalAssets={sys.totalAssets} />
       <main className="pt-14 pb-12">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 space-y-4">
           <div className="py-5 border-b border-[var(--demo-border-subtle)]">
             <p className="demo-label">Rheinland POC · live operations sandbox</p>
-            <h1 className="mt-1 text-xl font-semibold">Continuous monitoring · on-demand incident injection</h1>
+            <h1 className="mt-1 text-xl font-semibold">Facility-wide monitoring · on-demand incident injection</h1>
             <p className="mt-2 text-[13px] text-[var(--demo-muted)] max-w-2xl">
-              System runs continuously. Select equipment, inject an anomaly, and watch autonomous detection, record retrieval, fix analysis, and work order drafting.
+              All {sys.totalAssets} assets stream continuously. Click any equipment in the 3D twin or sidebar, inject an anomaly on the focused asset, and watch autonomous detection through work order drafting.
             </p>
           </div>
 
-          <SystemStatusBar mode={sys.mode} phase={sys.phase} lastScan={sys.lastScan} assetTag={sys.asset.tag} />
+          <IntegrationsBar />
+          <SystemStatusBar
+            mode={sys.mode}
+            phase={sys.phase}
+            lastScan={sys.lastScan}
+            normalCount={sys.normalCount}
+            totalAssets={sys.totalAssets}
+            incidentTag={incidentTag}
+          />
 
           <TwinViewer3D
             assetId={sys.assetId}
             severity={sys.severity}
             mode={sys.mode}
             phase={sys.phase}
-            readings={sys.readings}
+            assetSummaries={sys.assetSummaries}
+            allReadings={sys.allReadings}
+            markerStatuses={sys.markerStatuses}
             onAssetSelect={sys.selectAsset}
           />
+
+          <FacilityMonitorGrid summaries={sys.assetSummaries} />
 
           <div className="demo-panel p-4 sm:p-5">
             <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
               <div>
                 <p className="demo-label">Control</p>
                 <h2 className="text-base font-semibold mt-1">{FACILITY.name}</h2>
+                <p className="text-[11px] text-[var(--demo-muted)] mt-1">
+                  Focus asset: <span className="font-mono">{sys.asset.tag}</span> · inject applies to selection only
+                </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  disabled={!sys.canTrigger}
-                  onClick={handleTrigger}
-                  className="demo-btn-primary"
-                >
+                <button type="button" disabled={!sys.canTrigger} onClick={handleTrigger} className="demo-btn-primary">
                   {sys.mode === "incident" ? "Response in progress…" : "Inject anomaly"}
                 </button>
                 <button type="button" onClick={sys.resetMonitoring} className="demo-btn-secondary">
@@ -210,7 +306,7 @@ export default function DemoPage() {
             </div>
             <div className="grid sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-[var(--demo-border-subtle)]">
               <div>
-                <label className="demo-label block mb-2">Equipment</label>
+                <label className="demo-label block mb-2">Focus equipment</label>
                 <select
                   value={sys.assetId}
                   disabled={sys.mode === "incident"}
@@ -266,12 +362,11 @@ export default function DemoPage() {
           <FixAnalysisPanel fixes={sys.fixes} visible={sys.mode === "incident"} phase={sys.phase} />
 
           <div className="grid lg:grid-cols-3 gap-4">
-            {/* Telemetry */}
             <div className="demo-panel flex flex-col min-h-[360px]">
               <div className="px-4 py-3 border-b border-[var(--demo-border-subtle)] flex justify-between">
                 <div>
                   <p className="demo-label">01 · Telemetry</p>
-                  <p className="demo-heading mt-0.5">Live PI stream</p>
+                  <p className="demo-heading mt-0.5">Focused asset · PI stream</p>
                 </div>
                 <span className="text-[10px] font-mono text-[var(--demo-muted)]">
                   {sys.mode === "monitoring" ? "NORM" : meta.alertCode}
@@ -293,7 +388,6 @@ export default function DemoPage() {
               </div>
             </div>
 
-            {/* Agent */}
             <div className="demo-panel flex flex-col min-h-[360px]">
               <div className="px-4 py-3 border-b border-[var(--demo-border-subtle)] flex justify-between">
                 <div>
@@ -301,7 +395,7 @@ export default function DemoPage() {
                   <p className="demo-heading mt-0.5">Operadroom</p>
                 </div>
                 <span className="text-[11px] text-[var(--demo-muted)]">
-                  {sys.mode === "monitoring" ? "Watching" : "Executing"}
+                  {sys.mode === "monitoring" ? "Watching all assets" : "Executing"}
                 </span>
               </div>
               <div className="flex-1 p-4 space-y-2 overflow-y-auto demo-scroll">
@@ -330,7 +424,6 @@ export default function DemoPage() {
               )}
             </div>
 
-            {/* ERP */}
             <div className="demo-panel flex flex-col min-h-[360px]">
               <div className="px-4 py-3 border-b border-[var(--demo-border-subtle)] flex justify-between">
                 <div>
@@ -388,7 +481,7 @@ export default function DemoPage() {
                   </div>
                 )}
                 {phaseIndex(sys.phase) < phaseIndex("inventory") && sys.mode === "monitoring" && (
-                  <p className="text-[12px] text-[var(--demo-muted)]">Standing by for incident…</p>
+                  <p className="text-[12px] text-[var(--demo-muted)]">Standing by — all assets within baseline…</p>
                 )}
               </div>
             </div>
