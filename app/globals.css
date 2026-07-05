@@ -20,11 +20,20 @@
   --demo-canvas-bg: #e2e5ea;
   --demo-accent: #2f3d4c;
   --demo-accent-soft: #eef1f4;
+  /* Industrial status palette — muted SCADA / refinery convention */
+  --demo-ok: #256849;
+  --demo-ok-soft: #e6f0ea;
+  --demo-warn: #9a6700;
+  --demo-warn-soft: #f6f0e4;
+  --demo-alert: #9b2c2c;
+  --demo-alert-soft: #faeaea;
+  --demo-focus: #1e4976;
+  --demo-focus-soft: #e6eef6;
   --demo-severity-advisory: #5c6570;
-  --demo-severity-warning: #7c2d12;
-  --demo-severity-critical: #7f1d1d;
-  --demo-status-ok: #374151;
-  --demo-status-pending: #57534e;
+  --demo-severity-warning: #9a6700;
+  --demo-severity-critical: #9b2c2c;
+  --demo-status-ok: #256849;
+  --demo-status-pending: #9a6700;
 }
 
 .demo-root[data-demo-theme="dark"] {
@@ -40,11 +49,19 @@
   --demo-canvas-bg: #181b1f;
   --demo-accent: #c5cad1;
   --demo-accent-soft: #252930;
+  --demo-ok: #4ade80;
+  --demo-ok-soft: #1a2e22;
+  --demo-warn: #fbbf24;
+  --demo-warn-soft: #2a2418;
+  --demo-alert: #f87171;
+  --demo-alert-soft: #2e1a1a;
+  --demo-focus: #60a5fa;
+  --demo-focus-soft: #1a2433;
   --demo-severity-advisory: #9aa3ad;
-  --demo-severity-warning: #d6d3d1;
-  --demo-severity-critical: #fca5a5;
-  --demo-status-ok: #d1d5db;
-  --demo-status-pending: #a8a29e;
+  --demo-severity-warning: #fbbf24;
+  --demo-severity-critical: #f87171;
+  --demo-status-ok: #4ade80;
+  --demo-status-pending: #fbbf24;
 }
 
 .demo-root {
@@ -208,9 +225,9 @@ body {
   padding: 0.625rem 1.25rem;
   font-size: 12px;
   font-weight: 500;
-  background: var(--demo-text);
-  color: var(--demo-bg);
-  border: 1px solid var(--demo-text);
+  background: var(--demo-focus);
+  color: #ffffff;
+  border: 1px solid var(--demo-focus);
   transition: opacity 0.2s;
 }
 
@@ -240,6 +257,41 @@ body {
 .demo-btn-secondary:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.demo-btn-release {
+  padding: 0.625rem 1.25rem;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--demo-ok);
+  color: #ffffff;
+  border: 1px solid var(--demo-ok);
+  transition: opacity 0.2s;
+}
+
+.demo-btn-release:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.demo-btn-release:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.demo-status-ok {
+  color: var(--demo-ok);
+}
+
+.demo-status-warn {
+  color: var(--demo-warn);
+}
+
+.demo-status-alert {
+  color: var(--demo-alert);
+}
+
+.demo-status-focus {
+  color: var(--demo-focus);
 }
 
 @keyframes demo-live-pulse {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { LogoMark } from "@/components/demo/LogoMark";
 import { useDemoTheme } from "@/components/demo/DemoThemeProvider";
 import { TwinViewer3D } from "@/components/demo/TwinViewer3D";
@@ -7,6 +8,7 @@ import { phaseIndex, useLiveSystem } from "@/components/demo/useLiveSystem";
 import { trackEvent } from "@/lib/analytics";
 import { ASSET_LIST, FACILITY, getSeverityMeta, type Severity, type SimPhase } from "@/lib/demo/scenarios";
 import type { AssetHealthSummary, FixCandidate } from "@/lib/demo/liveSystem";
+import type { WorkOrderDraft } from "@/lib/demo/scenarios";
 
 function formatUptime(sec: number) {
   const h = Math.floor(sec / 3600);
@@ -31,7 +33,7 @@ function DemoNav({ uptimeSec, scanCount, normalCount, totalAssets }: { uptimeSec
         </div>
         <div className="hidden md:flex items-center gap-4 text-[11px] font-mono text-[var(--demo-muted)]">
           <span className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--demo-muted)] demo-live-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--demo-ok)] demo-live-pulse" />
             {normalCount}/{totalAssets} assets OK
           </span>
           <span>Scan #{scanCount}</span>
@@ -60,8 +62,8 @@ function IntegrationsBar() {
             <p className="text-[11px] font-medium truncate">{s.name}</p>
             <p className="text-[10px] text-[var(--demo-muted)] truncate">{s.detail}</p>
           </div>
-          <span className="text-[10px] font-mono text-[var(--demo-muted)] shrink-0 flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--demo-text)] demo-live-pulse" />
+          <span className="text-[10px] font-mono demo-status-ok shrink-0 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--demo-ok)] demo-live-pulse" />
             {s.status}
           </span>
         </div>
@@ -90,17 +92,19 @@ function SystemStatusBar({
     incident: "Incident response",
     resolved: "Resolved",
   };
+  const modeColor =
+    mode === "incident" ? "demo-status-warn" : mode === "resolved" ? "demo-status-ok" : "demo-status-focus";
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 border border-[var(--demo-border)] bg-[var(--demo-surface)]">
       {[
-        { label: "System state", value: labels[mode] ?? mode },
-        { label: "Facility health", value: `${normalCount}/${totalAssets} nominal` },
-        { label: "Pipeline", value: phase === "monitoring" ? "Idle · watching all assets" : phase.replace("_", " ") },
-        { label: "Last scan", value: incidentTag ? `${lastScan.toLocaleTimeString("en-GB")} · ${incidentTag}` : lastScan.toLocaleTimeString("en-GB") },
+        { label: "System state", value: labels[mode] ?? mode, color: modeColor },
+        { label: "Facility health", value: `${normalCount}/${totalAssets} nominal`, color: normalCount === totalAssets ? "demo-status-ok" : "demo-status-warn" },
+        { label: "Pipeline", value: phase === "monitoring" ? "Idle · watching all assets" : phase.replace("_", " "), color: phase === "monitoring" ? "" : "demo-status-focus" },
+        { label: "Last scan", value: incidentTag ? `${lastScan.toLocaleTimeString("en-GB")} · ${incidentTag}` : lastScan.toLocaleTimeString("en-GB"), color: incidentTag ? "demo-status-warn" : "" },
       ].map((item) => (
         <div key={item.label} className="px-4 py-3 border-r border-[var(--demo-border-subtle)] last:border-r-0">
           <p className="demo-label">{item.label}</p>
-          <p className="mt-1 text-[12px] font-medium font-mono capitalize">{item.value}</p>
+          <p className={`mt-1 text-[12px] font-medium font-mono capitalize ${item.color}`}>{item.value}</p>
         </div>
       ))}
     </div>
@@ -109,10 +113,17 @@ function SystemStatusBar({
 
 function FacilityMonitorGrid({ summaries }: { summaries: AssetHealthSummary[] }) {
   const statusDot = (s: AssetHealthSummary["status"]) => {
-    if (s === "breached") return "bg-[var(--demo-text)]";
-    if (s === "incident") return "bg-[var(--demo-muted)] demo-live-pulse";
-    if (s === "selected") return "bg-[var(--demo-text)]";
-    return "bg-[var(--demo-border)]";
+    if (s === "breached") return "bg-[var(--demo-alert)]";
+    if (s === "incident") return "bg-[var(--demo-warn)] demo-live-pulse";
+    if (s === "selected") return "bg-[var(--demo-focus)]";
+    return "bg-[var(--demo-ok)]";
+  };
+
+  const statusText = (s: AssetHealthSummary["status"]) => {
+    if (s === "breached") return "demo-status-alert";
+    if (s === "incident") return "demo-status-warn";
+    if (s === "selected") return "demo-status-focus";
+    return "demo-status-ok";
   };
 
   return (
@@ -137,7 +148,7 @@ function FacilityMonitorGrid({ summaries }: { summaries: AssetHealthSummary[] })
           </thead>
           <tbody>
             {summaries.map((s) => (
-              <tr key={s.id} className={`border-b border-[var(--demo-border-subtle)] ${s.status === "selected" ? "bg-[var(--demo-accent-soft)]" : ""}`}>
+              <tr key={s.id} className={`border-b border-[var(--demo-border-subtle)] ${s.status === "selected" ? "bg-[var(--demo-focus-soft)]" : ""}`}>
                 <td className="px-4 py-2 font-medium">
                   <span className="inline-flex items-center gap-2">
                     <span className={`w-1.5 h-1.5 rounded-full ${statusDot(s.status)}`} />
@@ -149,7 +160,7 @@ function FacilityMonitorGrid({ summaries }: { summaries: AssetHealthSummary[] })
                 <td className="px-2 py-2 text-right font-mono tabular-nums">
                   {s.primaryValue < 1 ? s.primaryValue.toFixed(3) : s.primaryValue.toFixed(1)} {s.primaryUnit}
                 </td>
-                <td className="px-4 py-2 text-right capitalize text-[var(--demo-muted)]">
+                <td className={`px-4 py-2 text-right capitalize ${statusText(s.status)}`}>
                   {s.status === "breached" ? "Alert" : s.status === "incident" ? "Event" : s.status === "selected" ? "Focus" : "OK"}
                 </td>
               </tr>
@@ -182,7 +193,7 @@ function PhaseTimeline({ phase }: { phase: SimPhase }) {
           const active = phase === step.key;
           return (
             <div key={step.key} className="flex-1 min-w-0">
-              <div className={`h-1 ${done ? "bg-[var(--demo-text)]" : active ? "bg-[var(--demo-muted)]" : "bg-[var(--demo-border-subtle)]"}`} />
+              <div className={`h-1 ${done ? "bg-[var(--demo-ok)]" : active ? "bg-[var(--demo-focus)]" : "bg-[var(--demo-border-subtle)]"}`} />
               <p className={`mt-2 text-[10px] truncate ${active ? "font-medium" : "text-[var(--demo-muted)]"}`}>{step.label}</p>
             </div>
           );
@@ -202,7 +213,7 @@ function FixAnalysisPanel({ fixes, visible, phase }: { fixes: FixCandidate[]; vi
           <div
             key={f.id}
             className={`flex items-start justify-between gap-3 px-3 py-2 border ${
-              f.selected ? "border-[var(--demo-text)] bg-[var(--demo-accent-soft)]" : "border-[var(--demo-border-subtle)]"
+              f.selected ? "border-[var(--demo-focus)] bg-[var(--demo-focus-soft)]" : "border-[var(--demo-border-subtle)]"
             }`}
           >
             <div className="min-w-0">
@@ -217,7 +228,7 @@ function FixAnalysisPanel({ fixes, visible, phase }: { fixes: FixCandidate[]; vi
   );
 }
 
-function Sparkline({ data }: { data: number[] }) {
+function Sparkline({ data, alert }: { data: number[]; alert?: boolean }) {
   if (data.length < 2) return null;
   const min = Math.min(...data);
   const max = Math.max(...data);
@@ -225,8 +236,87 @@ function Sparkline({ data }: { data: number[] }) {
   const pts = data.map((v, i) => `${(i / (data.length - 1)) * 100},${32 - ((v - min) / range) * 28}`).join(" ");
   return (
     <svg viewBox="0 0 100 32" className="w-full h-6 mt-1" preserveAspectRatio="none">
-      <polyline fill="none" stroke="var(--demo-muted)" strokeWidth="1" points={pts} />
+      <polyline fill="none" stroke={alert ? "var(--demo-alert)" : "var(--demo-focus)"} strokeWidth="1" points={pts} />
     </svg>
+  );
+}
+
+const SEVERITY_STYLE: Record<Severity, { active: string; idle: string }> = {
+  advisory: {
+    active: "border-[var(--demo-severity-advisory)] bg-[var(--demo-accent-soft)] text-[var(--demo-text)]",
+    idle: "border-[var(--demo-border)] text-[var(--demo-muted)]",
+  },
+  warning: {
+    active: "border-[var(--demo-warn)] bg-[var(--demo-warn-soft)] demo-status-warn",
+    idle: "border-[var(--demo-border)] text-[var(--demo-muted)]",
+  },
+  critical: {
+    active: "border-[var(--demo-alert)] bg-[var(--demo-alert-soft)] demo-status-alert",
+    idle: "border-[var(--demo-border)] text-[var(--demo-muted)]",
+  },
+};
+
+function EngineerReleasePanel({
+  open,
+  assetTag,
+  workOrder,
+  notes,
+  onNotesChange,
+  onCancel,
+  onRelease,
+}: {
+  open: boolean;
+  assetTag: string;
+  workOrder: WorkOrderDraft | null;
+  notes: string;
+  onNotesChange: (value: string) => void;
+  onCancel: () => void;
+  onRelease: () => void;
+}) {
+  if (!open || !workOrder) return null;
+
+  return (
+    <div className="mt-4 pt-4 border-t border-[var(--demo-border-subtle)] demo-fade-in">
+      <div className="border border-[var(--demo-warn)] bg-[var(--demo-warn-soft)] px-4 py-3 mb-4">
+        <p className="text-[12px] font-medium">Engineer release · HITL-01</p>
+        <p className="text-[11px] text-[var(--demo-muted)] mt-1">
+          Review draft work order for <span className="font-mono">{assetTag}</span> before SAP RELEASE. Add any field observations or constraints below.
+        </p>
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-4">
+        <div className="border border-[var(--demo-border)] p-3 bg-[var(--demo-surface-2)] text-[11px] space-y-1">
+          <p className="demo-label mb-2">Draft summary</p>
+          <p><span className="text-[var(--demo-faint)]">Type</span> · {workOrder.orderType}</p>
+          <p><span className="text-[var(--demo-faint)]">Priority</span> · {workOrder.priority}</p>
+          <p className="text-[var(--demo-muted)] pt-1">{workOrder.shortText}</p>
+        </div>
+
+        <div>
+          <label htmlFor="engineer-notes" className="demo-label block mb-2">
+            Engineer notes <span className="text-[var(--demo-faint)]">(optional)</span>
+          </label>
+          <textarea
+            id="engineer-notes"
+            value={notes}
+            onChange={(e) => onNotesChange(e.target.value)}
+            rows={4}
+            placeholder="e.g. Confirm LOTO with shift supervisor before start. Crew B available after 06:00. Vibration trending noted on adjacent train."
+            className="w-full border border-[var(--demo-border)] bg-[var(--demo-surface)] px-3 py-2 text-[12px] resize-y min-h-[96px] focus:outline-none focus:border-[var(--demo-focus)]"
+          />
+          <p className="text-[10px] text-[var(--demo-faint)] mt-1.5">Notes are appended to the work order long text and sealed in Reelin ID audit trail.</p>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2 mt-4">
+        <button type="button" onClick={onRelease} className="demo-btn-release">
+          Release to SAP PM
+        </button>
+        <button type="button" onClick={onCancel} className="demo-btn-secondary">
+          Cancel
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -234,15 +324,39 @@ export default function DemoPage() {
   const sys = useLiveSystem("p2047");
   const meta = getSeverityMeta(sys.severity);
   const incidentTag = sys.mode === "incident" ? sys.asset.tag : null;
+  const [releaseOpen, setReleaseOpen] = useState(false);
+  const [releaseNotes, setReleaseNotes] = useState("");
+
+  useEffect(() => {
+    if (!sys.canApprove) setReleaseOpen(false);
+  }, [sys.canApprove]);
+
+  useEffect(() => {
+    if (sys.approved) {
+      setReleaseOpen(false);
+      setReleaseNotes("");
+    }
+  }, [sys.approved]);
 
   const handleTrigger = () => {
     trackEvent("demo_trigger_anomaly", { asset: sys.assetId, severity: sys.severity });
     sys.triggerAnomaly();
   };
 
-  const handleApprove = () => {
-    trackEvent("demo_approve", { asset: sys.assetId, severity: sys.severity });
-    sys.approveWorkOrder();
+  const handleOpenRelease = () => setReleaseOpen(true);
+
+  const handleCancelRelease = () => {
+    setReleaseOpen(false);
+    setReleaseNotes("");
+  };
+
+  const handleRelease = () => {
+    trackEvent("demo_approve", {
+      asset: sys.assetId,
+      severity: sys.severity,
+      hasNotes: releaseNotes.trim().length > 0,
+    });
+    sys.approveWorkOrder(releaseNotes);
   };
 
   return (
@@ -297,13 +411,23 @@ export default function DemoPage() {
                 <button type="button" onClick={sys.resetMonitoring} className="demo-btn-secondary">
                   Return to monitoring
                 </button>
-                {sys.canApprove && (
-                  <button type="button" onClick={handleApprove} className="demo-btn-secondary font-medium">
+                {sys.canApprove && !releaseOpen && (
+                  <button type="button" onClick={handleOpenRelease} className="demo-btn-release">
                     Engineer approval
                   </button>
                 )}
               </div>
             </div>
+
+            <EngineerReleasePanel
+              open={releaseOpen && sys.canApprove}
+              assetTag={sys.asset.tag}
+              workOrder={sys.workOrder}
+              notes={releaseNotes}
+              onNotesChange={setReleaseNotes}
+              onCancel={handleCancelRelease}
+              onRelease={handleRelease}
+            />
             <div className="grid sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-[var(--demo-border-subtle)]">
               <div>
                 <label className="demo-label block mb-2">Focus equipment</label>
@@ -328,9 +452,7 @@ export default function DemoPage() {
                       disabled={sys.mode === "incident"}
                       onClick={() => sys.setSeverity(s)}
                       className={`py-2 text-[11px] font-medium border ${
-                        sys.severity === s
-                          ? "border-[var(--demo-text)] bg-[var(--demo-accent-soft)]"
-                          : "border-[var(--demo-border)] text-[var(--demo-muted)]"
+                        sys.severity === s ? SEVERITY_STYLE[s].active : SEVERITY_STYLE[s].idle
                       }`}
                     >
                       {getSeverityMeta(s).label}
@@ -368,13 +490,13 @@ export default function DemoPage() {
                   <p className="demo-label">01 · Telemetry</p>
                   <p className="demo-heading mt-0.5">Focused asset · PI stream</p>
                 </div>
-                <span className="text-[10px] font-mono text-[var(--demo-muted)]">
+                <span className={`text-[10px] font-mono ${sys.mode === "monitoring" ? "demo-status-ok" : "demo-status-warn"}`}>
                   {sys.mode === "monitoring" ? "NORM" : meta.alertCode}
                 </span>
               </div>
               <div className="p-4 flex-1 space-y-2 overflow-y-auto demo-scroll">
                 {sys.readings.map((r) => (
-                  <div key={r.label} className={`border px-3 py-2 ${r.breached ? "border-[var(--demo-text)]" : "border-[var(--demo-border-subtle)]"}`}>
+                  <div key={r.label} className={`border px-3 py-2 ${r.breached ? "border-[var(--demo-alert)] bg-[var(--demo-alert-soft)]" : "border-[var(--demo-border-subtle)]"}`}>
                     <div className="flex justify-between text-[12px]">
                       <span>{r.label}</span>
                       <span className="font-mono tabular-nums">
@@ -382,7 +504,7 @@ export default function DemoPage() {
                         <span className="text-[10px] text-[var(--demo-muted)] ml-1">{r.unit}</span>
                       </span>
                     </div>
-                    <Sparkline data={r.history.length > 1 ? r.history : [r.baseline, r.value]} />
+                    <Sparkline data={r.history.length > 1 ? r.history : [r.baseline, r.value]} alert={r.breached} />
                   </div>
                 ))}
               </div>
@@ -430,7 +552,7 @@ export default function DemoPage() {
                   <p className="demo-label">03 · ERP</p>
                   <p className="demo-heading mt-0.5">SAP PM</p>
                 </div>
-                <span className="text-[10px] font-mono text-[var(--demo-muted)]">
+                <span className={`text-[10px] font-mono ${sys.approved ? "demo-status-ok" : phaseIndex(sys.phase) >= phaseIndex("review") ? "demo-status-warn" : ""}`}>
                   {sys.approved ? "REL" : phaseIndex(sys.phase) >= phaseIndex("review") ? "DRF" : "—"}
                 </span>
               </div>
@@ -449,7 +571,9 @@ export default function DemoPage() {
                         <tr key={l.material} className="border-b border-[var(--demo-border-subtle)]">
                           <td className="py-1.5 font-mono text-[var(--demo-muted)]">{l.material}</td>
                           <td className="py-1.5 pr-2">{l.description}</td>
-                          <td className="py-1.5 text-right text-[var(--demo-muted)]">{l.status === "procure" ? "PR" : "OK"}</td>
+                          <td className={`py-1.5 text-right ${l.status === "procure" ? "demo-status-warn" : "demo-status-ok"}`}>
+                            {l.status === "procure" ? "PR" : "OK"}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -466,18 +590,27 @@ export default function DemoPage() {
                       <p><span className="text-[var(--demo-faint)]">Priority</span> · {sys.workOrder.priority}</p>
                       <p className="pt-1 text-[var(--demo-muted)]">{sys.workOrder.shortText}</p>
                       <p className="text-[10px] text-[var(--demo-faint)] pt-1">Start {formatDate(sys.workOrder.requiredStart)}</p>
+                      {sys.engineerNotes && (
+                        <div className="mt-3 pt-3 border-t border-[var(--demo-border-subtle)]">
+                          <p className="text-[var(--demo-faint)]">Engineer notes</p>
+                          <p className="text-[var(--demo-muted)] mt-1 whitespace-pre-wrap">{sys.engineerNotes}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
-                {phaseIndex(sys.phase) >= phaseIndex("review") && !sys.approved && (
-                  <div className="border border-[var(--demo-border)] p-3 bg-[var(--demo-surface-2)]">
-                    <p className="text-[12px] font-medium">Awaiting engineer release</p>
-                    <p className="text-[11px] text-[var(--demo-muted)] mt-1">No SAP RELEASE executed. HITL-01 enforced.</p>
+                {phaseIndex(sys.phase) >= phaseIndex("review") && !sys.approved && !releaseOpen && (
+                  <div className="border border-[var(--demo-warn)] p-3 bg-[var(--demo-warn-soft)]">
+                    <p className="text-[12px] font-medium demo-status-warn">Awaiting engineer release</p>
+                    <p className="text-[11px] text-[var(--demo-muted)] mt-1">No SAP RELEASE executed. HITL-01 enforced — use Engineer approval to add notes and release.</p>
                   </div>
                 )}
                 {sys.approved && (
-                  <div className="border border-[var(--demo-border)] p-3">
-                    <p className="text-[12px] font-medium">Released to planning</p>
+                  <div className="border border-[var(--demo-ok)] p-3 bg-[var(--demo-ok-soft)]">
+                    <p className="text-[12px] font-medium demo-status-ok">Released to planning · WO 9001847</p>
+                    {sys.engineerNotes && (
+                      <p className="text-[11px] text-[var(--demo-muted)] mt-2 whitespace-pre-wrap">{sys.engineerNotes}</p>
+                    )}
                   </div>
                 )}
                 {phaseIndex(sys.phase) < phaseIndex("inventory") && sys.mode === "monitoring" && (

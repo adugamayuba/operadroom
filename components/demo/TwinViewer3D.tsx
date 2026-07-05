@@ -31,10 +31,10 @@ function MiniSparkline({ data }: { data: number[] }) {
 }
 
 function statusLabel(s: AssetHealthSummary["status"]) {
-  if (s === "breached") return "Alert";
-  if (s === "incident") return "Event";
-  if (s === "selected") return "Focus";
-  return "OK";
+  if (s === "breached") return { text: "Alert", className: "demo-status-alert" };
+  if (s === "incident") return { text: "Event", className: "demo-status-warn" };
+  if (s === "selected") return { text: "Focus", className: "demo-status-focus" };
+  return { text: "OK", className: "demo-status-ok" };
 }
 
 export function TwinViewer3D({
@@ -71,7 +71,7 @@ export function TwinViewer3D({
     <section className="border border-[var(--demo-border)] bg-[var(--demo-surface)] overflow-hidden">
       <div className="px-4 py-3 border-b border-[var(--demo-border)] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className={`shrink-0 w-2 h-2 rounded-full ${incident ? "bg-[var(--demo-text)] demo-live-pulse" : "bg-[var(--demo-muted)] demo-live-pulse"}`} />
+          <div className={`shrink-0 w-2 h-2 rounded-full ${incident ? "bg-[var(--demo-warn)] demo-live-pulse" : "bg-[var(--demo-ok)] demo-live-pulse"}`} />
           <div>
             <p className="text-[11px] text-[var(--demo-muted)]">
               Digital twin · {incident ? "Incident on " + ASSETS[assetId].tag : `Monitoring ${assetSummaries.length} assets`}
@@ -82,10 +82,10 @@ export function TwinViewer3D({
           </div>
         </div>
         <div className="flex border border-[var(--demo-border)] text-[11px] shrink-0">
-          <button type="button" onClick={() => setView("facility")} className={`px-3 py-1.5 ${view === "facility" ? "bg-[var(--demo-text)] text-[var(--demo-bg)]" : "text-[var(--demo-muted)]"}`}>
+          <button type="button" onClick={() => setView("facility")} className={`px-3 py-1.5 ${view === "facility" ? "bg-[var(--demo-focus)] text-white" : "text-[var(--demo-muted)]"}`}>
             Plant
           </button>
-          <button type="button" onClick={() => setView("asset")} className={`px-3 py-1.5 border-l border-[var(--demo-border)] ${view === "asset" ? "bg-[var(--demo-text)] text-[var(--demo-bg)]" : "text-[var(--demo-muted)]"}`}>
+          <button type="button" onClick={() => setView("asset")} className={`px-3 py-1.5 border-l border-[var(--demo-border)] ${view === "asset" ? "bg-[var(--demo-focus)] text-white" : "text-[var(--demo-muted)]"}`}>
             Asset detail
           </button>
         </div>
@@ -124,13 +124,13 @@ export function TwinViewer3D({
                   type="button"
                   onClick={() => handleSelect(summary.id)}
                   className={`w-full text-left px-3 py-2.5 border-b border-[var(--demo-border-subtle)] hover:bg-[var(--demo-surface)] transition-colors ${
-                    isSelected ? "bg-[var(--demo-surface)] border-l-2 border-l-[var(--demo-text)]" : "border-l-2 border-l-transparent"
+                    isSelected ? "bg-[var(--demo-focus-soft)] border-l-2 border-l-[var(--demo-focus)]" : "border-l-2 border-l-transparent"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
                       <span className="text-[12px] font-medium">{summary.tag}</span>
-                      <span className="text-[10px] text-[var(--demo-muted)] ml-2">{statusLabel(summary.status)}</span>
+                      <span className={`text-[10px] ml-2 ${statusLabel(summary.status).className}`}>{statusLabel(summary.status).text}</span>
                     </div>
                     {primary && (
                       <MiniSparkline data={primary.history.length > 1 ? primary.history : [primary.baseline, primary.value]} />

@@ -60,6 +60,7 @@ export function useLiveSystem(initialAsset: AssetId = "p2047") {
   const [ramp, setRamp] = useState(0);
   const [visibleLogs, setVisibleLogs] = useState(1);
   const [approved, setApproved] = useState(false);
+  const [engineerNotes, setEngineerNotes] = useState("");
   const [elapsed, setElapsed] = useState(0);
   const [lastScan, setLastScan] = useState(new Date());
   const [uptimeSec, setUptimeSec] = useState(0);
@@ -214,6 +215,7 @@ export function useLiveSystem(initialAsset: AssetId = "p2047") {
     setRamp(0);
     rampRef.current = 0;
     setApproved(false);
+    setEngineerNotes("");
     setVisibleLogs(1);
     setElapsed(0);
   }, [clearTimers]);
@@ -223,7 +225,8 @@ export function useLiveSystem(initialAsset: AssetId = "p2047") {
     selectedAssetRef.current = id;
   }, []);
 
-  const approveWorkOrder = useCallback(() => {
+  const approveWorkOrder = useCallback((notes: string) => {
+    setEngineerNotes(notes.trim());
     setApproved(true);
     setPhase("approved");
     setMode("resolved");
@@ -297,6 +300,7 @@ export function useLiveSystem(initialAsset: AssetId = "p2047") {
     inventory,
     workOrder,
     approved,
+    engineerNotes,
     elapsed,
     lastScan,
     uptimeSec,

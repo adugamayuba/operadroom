@@ -10,10 +10,10 @@ import { ASSETS, ASSET_LIST } from "@/lib/demo/scenarios";
 import type { MarkerStatus, SystemMode } from "@/lib/demo/liveSystem";
 
 const STATUS_COLOR: Record<MarkerStatus, string> = {
-  normal: "#9ca3af",
-  selected: "#374151",
-  incident: "#78716c",
-  breached: "#991b1b",
+  normal: "#6b7280",
+  selected: "#1e4976",
+  incident: "#9a6700",
+  breached: "#9b2c2c",
 };
 
 function Pipe({ from, to, radius = 0.08 }: { from: [number, number, number]; to: [number, number, number]; radius?: number }) {
