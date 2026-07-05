@@ -82,15 +82,15 @@ export function loadAuditRecord(slugOrId: string): AuditRecord | null {
 }
 
 const PHASE_AUDIT: Partial<Record<SimPhase, { action: string; detail?: string; actor?: AuditActor }>> = {
-  detecting: { action: "Anomaly detected", detail: "Threshold breach correlated across PI Historian and Cognite CDF", actor: "operadroom" },
-  ingest: { action: "Alert normalized", detail: "Mapped to SAP equipment master · duplicate check passed", actor: "operadroom" },
-  records: { action: "Maintenance records retrieved", detail: "OEM manuals and prior work orders indexed", actor: "operadroom" },
+  detecting: { action: "C3 Reliability alert ingested", detail: "Site API · Operadroom solution agent activated", actor: "system" },
+  ingest: { action: "Alert mapped to SAP equipment", detail: "PI Historian context attached (read-only)", actor: "operadroom" },
+  records: { action: "Historical records digitized and queried", detail: "Prior WOs, OEM manuals, field notes indexed", actor: "operadroom" },
   diagnose: { action: "Root cause analysis completed", actor: "operadroom" },
   analyze: { action: "Corrective procedures evaluated", detail: "Multi-criteria scoring: downtime, spares, safety, SLA", actor: "operadroom" },
   select: { action: "Procedure selected", actor: "operadroom" },
   inventory: { action: "SAP MM availability check", actor: "sap" },
   draft: { action: "Work order draft composed", detail: "SAP PM DRAFT created · RELEASE blocked pending HITL-01", actor: "operadroom" },
-  review: { action: "Awaiting engineer release", detail: "Human authorization required before SAP RELEASE", actor: "system" },
+  review: { action: "Awaiting engineer release", detail: "HITL-01 · Notes will update engineer Reelin ID agent", actor: "system" },
 };
 
 export function createAuditRecord(params: {

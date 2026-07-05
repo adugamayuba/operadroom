@@ -381,10 +381,10 @@ export function useLiveSystem(initialAsset: AssetId = "p2047") {
           phase: "approved",
           timestamp: "Live",
           level: "success",
-          message: "SAP RELEASE authorized · audit trail sealed",
+          message: "SAP RELEASE authorized · engineer agent memory updated",
           detail: engineerNotes
-            ? `Engineer notes appended · WO ${SAP_RELEASED_WO} · ${workOrder.reelinId}`
-            : `WO ${SAP_RELEASED_WO} released to planning · ${workOrder.reelinId}`,
+            ? `Notes indexed to engineer Reelin ID · WO ${SAP_RELEASED_WO} · ${workOrder.reelinId}`
+            : `WO ${SAP_RELEASED_WO} released · session stored for future retrieval · ${workOrder.reelinId}`,
         }
       : null;
 
