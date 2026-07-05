@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Sans } from "next/font/google";
+import { Roboto_Condensed } from "next/font/google";
 import { DemoThemeProvider } from "@/components/demo/DemoThemeProvider";
 
-const ibm = IBM_Plex_Sans({
+const demoFont = Roboto_Condensed({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "700"],
   variable: "--font-demo",
 });
 
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function DemoLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={ibm.className}>
+    <div className={`${demoFont.variable} ${demoFont.className}`}>
       <DemoThemeProvider>{children}</DemoThemeProvider>
     </div>
   );

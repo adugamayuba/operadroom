@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { LogoMark } from "@/components/demo/LogoMark";
 import { useDemoTheme } from "@/components/demo/DemoThemeProvider";
-import { useAlertSound } from "@/components/demo/useAlertSound";
 import { TwinViewer3D } from "@/components/demo/TwinViewer3D";
 import { phaseIndex, SAP_RELEASED_WO, useLiveSystem } from "@/components/demo/useLiveSystem";
 import { trackEvent } from "@/lib/analytics";
@@ -25,29 +24,15 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
-function DemoNav({
-  uptimeSec,
-  scanCount,
-  normalCount,
-  totalAssets,
-  soundEnabled,
-  onSoundToggle,
-}: {
-  uptimeSec: number;
-  scanCount: number;
-  normalCount: number;
-  totalAssets: number;
-  soundEnabled: boolean;
-  onSoundToggle: () => void;
-}) {
+function DemoNav({ uptimeSec, scanCount, normalCount, totalAssets }: { uptimeSec: number; scanCount: number; normalCount: number; totalAssets: number }) {
   const { theme, toggle } = useDemoTheme();
   return (
     <header className="fixed top-0 inset-x-0 z-50 bg-[var(--demo-surface)] border-b border-[var(--demo-border)] pt-[env(safe-area-inset-top)]">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
         <div className="flex items-center gap-2 shrink-0">
           <LogoMark className="w-4 h-4 opacity-80" />
-          <span className="text-[13px] font-semibold">Operadroom</span>
-          <span className="hidden sm:inline text-[10px] text-[var(--demo-muted)] border-l border-[var(--demo-border)] pl-2 ml-1">Live demo</span>
+          <span className="text-[13px] font-semibold tracking-wide uppercase">Operadroom</span>
+          <span className="hidden sm:inline text-[10px] text-[var(--demo-muted)] border-l border-[var(--demo-border)] pl-2 ml-1 uppercase tracking-wider">Live demo</span>
         </div>
         <div className="hidden md:flex items-center gap-4 text-[11px] font-mono text-[var(--demo-muted)]">
           <span className="flex items-center gap-1.5">
@@ -57,21 +42,9 @@ function DemoNav({
           <span>Scan #{scanCount}</span>
           <span>Uptime {formatUptime(uptimeSec)}</span>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={onSoundToggle}
-            title={soundEnabled ? "Alert sound on" : "Alert sound off"}
-            className={`text-[11px] border px-2.5 py-1 ${
-              soundEnabled ? "border-[var(--demo-warn)] bg-[var(--demo-warn-soft)] demo-status-warn" : "border-[var(--demo-border)] text-[var(--demo-muted)]"
-            }`}
-          >
-            {soundEnabled ? "Sound on" : "Sound off"}
-          </button>
-          <button type="button" onClick={toggle} className="text-[11px] border border-[var(--demo-border)] px-2.5 py-1 text-[var(--demo-muted)]">
-            {theme === "light" ? "Dark" : "Light"}
-          </button>
-        </div>
+        <button type="button" onClick={toggle} className="text-[11px] border border-[var(--demo-border)] px-2.5 py-1 text-[var(--demo-muted)] shrink-0 uppercase tracking-wider">
+          {theme === "light" ? "Dark" : "Light"}
+        </button>
       </div>
     </header>
   );
@@ -142,11 +115,11 @@ function EmailToast({
   if (!visible) return null;
 
   return (
-    <div className="fixed bottom-6 right-4 z-[60] max-w-sm border border-[var(--demo-ok)] bg-[var(--demo-ok-soft)] p-4 shadow-lg demo-fade-in">
-      <p className="text-[12px] font-medium demo-status-ok">Work order emailed to maintenance planning</p>
+    <div className="fixed bottom-6 right-4 z-[60] max-w-sm demo-field-ok p-4 shadow-lg demo-fade-in">
+      <p className="text-[12px] font-medium">Work order emailed to maintenance planning</p>
       <p className="text-[11px] text-[var(--demo-muted)] mt-1">{PLANNING_RECIPIENTS[0]} + {PLANNING_RECIPIENTS.length - 1} others</p>
       {messageId && <p className="text-[10px] font-mono text-[var(--demo-faint)] mt-2 break-all">{messageId}</p>}
-      <button type="button" onClick={onDismiss} className="mt-3 text-[11px] demo-status-focus underline">
+      <button type="button" onClick={onDismiss} className="mt-3 text-[11px] text-[var(--demo-text)] underline">
         Dismiss
       </button>
     </div>
@@ -168,7 +141,7 @@ function IntegrationsBar() {
             <p className="text-[11px] font-medium truncate">{s.name}</p>
             <p className="text-[10px] text-[var(--demo-muted)] truncate">{s.detail}</p>
           </div>
-          <span className="text-[10px] font-mono demo-status-ok shrink-0 flex items-center gap-1">
+          <span className="demo-field-ok demo-pill shrink-0 flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--demo-ok)] demo-live-pulse" />
             {s.status}
           </span>
@@ -198,19 +171,35 @@ function SystemStatusBar({
     incident: "Incident response",
     resolved: "Resolved",
   };
-  const modeColor =
-    mode === "incident" ? "demo-status-warn" : mode === "resolved" ? "demo-status-ok" : "demo-status-focus";
+  const modeField =
+    mode === "incident" ? "demo-field-warn" : mode === "resolved" ? "demo-field-ok" : "demo-field-focus";
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 border border-[var(--demo-border)] bg-[var(--demo-surface)]">
       {[
-        { label: "System state", value: labels[mode] ?? mode, color: modeColor },
-        { label: "Facility health", value: `${normalCount}/${totalAssets} nominal`, color: normalCount === totalAssets ? "demo-status-ok" : "demo-status-warn" },
-        { label: "Pipeline", value: phase === "monitoring" ? "Idle · watching all assets" : phase.replace("_", " "), color: phase === "monitoring" ? "" : "demo-status-focus" },
-        { label: "Last scan", value: incidentTag ? `${lastScan.toLocaleTimeString("en-GB")} · ${incidentTag}` : lastScan.toLocaleTimeString("en-GB"), color: incidentTag ? "demo-status-warn" : "" },
+        { label: "System state", value: labels[mode] ?? mode, field: modeField },
+        {
+          label: "Facility health",
+          value: `${normalCount}/${totalAssets} nominal`,
+          field: normalCount === totalAssets ? "demo-field-ok" : "demo-field-warn",
+        },
+        {
+          label: "Pipeline",
+          value: phase === "monitoring" ? "Idle · watching all assets" : phase.replace("_", " "),
+          field: phase === "monitoring" ? "" : "demo-field-focus",
+        },
+        {
+          label: "Last scan",
+          value: incidentTag ? `${lastScan.toLocaleTimeString("en-GB")} · ${incidentTag}` : lastScan.toLocaleTimeString("en-GB"),
+          field: incidentTag ? "demo-field-warn" : "",
+        },
       ].map((item) => (
         <div key={item.label} className="px-4 py-3 border-r border-[var(--demo-border-subtle)] last:border-r-0">
           <p className="demo-label">{item.label}</p>
-          <p className={`mt-1 text-[12px] font-medium font-mono capitalize ${item.color}`}>{item.value}</p>
+          {item.field ? (
+            <span className={`mt-1 inline-block demo-pill text-[12px] font-medium font-mono capitalize ${item.field}`}>{item.value}</span>
+          ) : (
+            <p className="mt-1 text-[12px] font-medium font-mono capitalize text-[var(--demo-text)]">{item.value}</p>
+          )}
         </div>
       ))}
     </div>
@@ -225,11 +214,18 @@ function FacilityMonitorGrid({ summaries }: { summaries: AssetHealthSummary[] })
     return "bg-[var(--demo-ok)]";
   };
 
-  const statusText = (s: AssetHealthSummary["status"]) => {
-    if (s === "breached") return "demo-status-alert";
-    if (s === "incident") return "demo-status-warn";
-    if (s === "selected") return "demo-status-focus";
-    return "demo-status-ok";
+  const statusField = (s: AssetHealthSummary["status"]) => {
+    if (s === "breached") return "demo-field-alert";
+    if (s === "incident") return "demo-field-warn";
+    if (s === "selected") return "demo-field-focus";
+    return "demo-field-ok";
+  };
+
+  const statusLabel = (s: AssetHealthSummary["status"]) => {
+    if (s === "breached") return "Alert";
+    if (s === "incident") return "Event";
+    if (s === "selected") return "Focus";
+    return "OK";
   };
 
   return (
@@ -266,8 +262,8 @@ function FacilityMonitorGrid({ summaries }: { summaries: AssetHealthSummary[] })
                 <td className="px-2 py-2 text-right font-mono tabular-nums">
                   {s.primaryValue < 1 ? s.primaryValue.toFixed(3) : s.primaryValue.toFixed(1)} {s.primaryUnit}
                 </td>
-                <td className={`px-4 py-2 text-right capitalize ${statusText(s.status)}`}>
-                  {s.status === "breached" ? "Alert" : s.status === "incident" ? "Event" : s.status === "selected" ? "Focus" : "OK"}
+                <td className="px-4 py-2 text-right">
+                  <span className={`demo-pill ${statusField(s.status)}`}>{statusLabel(s.status)}</span>
                 </td>
               </tr>
             ))}
@@ -342,23 +338,23 @@ function Sparkline({ data, alert }: { data: number[]; alert?: boolean }) {
   const pts = data.map((v, i) => `${(i / (data.length - 1)) * 100},${32 - ((v - min) / range) * 28}`).join(" ");
   return (
     <svg viewBox="0 0 100 32" className="w-full h-6 mt-1" preserveAspectRatio="none">
-      <polyline fill="none" stroke={alert ? "var(--demo-alert)" : "var(--demo-focus)"} strokeWidth="1" points={pts} />
+      <polyline fill="none" stroke="var(--demo-muted)" strokeWidth="1" points={pts} />
     </svg>
   );
 }
 
 const SEVERITY_STYLE: Record<Severity, { active: string; idle: string }> = {
   advisory: {
-    active: "border-[var(--demo-severity-advisory)] bg-[var(--demo-accent-soft)] text-[var(--demo-text)]",
-    idle: "border-[var(--demo-border)] text-[var(--demo-muted)]",
+    active: "border-[var(--demo-border)] bg-[var(--demo-accent-soft)] text-[var(--demo-text)]",
+    idle: "border-[var(--demo-border)] text-[var(--demo-muted)] bg-transparent",
   },
   warning: {
-    active: "border-[var(--demo-warn)] bg-[var(--demo-warn-soft)] demo-status-warn",
-    idle: "border-[var(--demo-border)] text-[var(--demo-muted)]",
+    active: "demo-field-warn",
+    idle: "border-[var(--demo-border)] text-[var(--demo-muted)] bg-transparent",
   },
   critical: {
-    active: "border-[var(--demo-alert)] bg-[var(--demo-alert-soft)] demo-status-alert",
-    idle: "border-[var(--demo-border)] text-[var(--demo-muted)]",
+    active: "demo-field-alert",
+    idle: "border-[var(--demo-border)] text-[var(--demo-muted)] bg-transparent",
   },
 };
 
@@ -383,7 +379,7 @@ function EngineerReleasePanel({
 
   return (
     <div className="mt-4 pt-4 border-t border-[var(--demo-border-subtle)] demo-fade-in">
-      <div className="border border-[var(--demo-warn)] bg-[var(--demo-warn-soft)] px-4 py-3 mb-4">
+      <div className="border demo-field-warn px-4 py-3 mb-4">
         <p className="text-[12px] font-medium">Engineer release · HITL-01</p>
         <p className="text-[11px] text-[var(--demo-muted)] mt-1">
           Review draft work order for <span className="font-mono">{assetTag}</span> before SAP RELEASE. Add any field observations or constraints below.
@@ -427,8 +423,7 @@ function EngineerReleasePanel({
 }
 
 export default function DemoPage() {
-  const { enabled: soundEnabled, toggle: toggleSound, playIfEnabled } = useAlertSound();
-  const sys = useLiveSystem("p2047", playIfEnabled);
+  const sys = useLiveSystem("p2047");
   const meta = getSeverityMeta(sys.severity);
   const incidentTag = sys.mode === "incident" ? sys.asset.tag : null;
   const [releaseOpen, setReleaseOpen] = useState(false);
@@ -503,14 +498,7 @@ export default function DemoPage() {
 
   return (
     <>
-      <DemoNav
-        uptimeSec={sys.uptimeSec}
-        scanCount={sys.scanCount}
-        normalCount={sys.normalCount}
-        totalAssets={sys.totalAssets}
-        soundEnabled={soundEnabled}
-        onSoundToggle={toggleSound}
-      />
+      <DemoNav uptimeSec={sys.uptimeSec} scanCount={sys.scanCount} normalCount={sys.normalCount} totalAssets={sys.totalAssets} />
       <EmailToast visible={emailToast.visible} messageId={emailToast.messageId} onDismiss={() => setEmailToast({ visible: false })} />
       <main className="pt-14 pb-12">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 space-y-4">
@@ -640,7 +628,7 @@ export default function DemoPage() {
                   <p className="demo-label">01 · Telemetry</p>
                   <p className="demo-heading mt-0.5">Focused asset · PI stream</p>
                 </div>
-                <span className={`text-[10px] font-mono ${sys.mode === "monitoring" ? "demo-status-ok" : "demo-status-warn"}`}>
+                <span className={`text-[10px] font-mono demo-pill ${sys.mode === "monitoring" ? "demo-field-ok" : "demo-field-warn"}`}>
                   {sys.mode === "monitoring" ? "NORM" : meta.alertCode}
                 </span>
               </div>
@@ -697,7 +685,7 @@ export default function DemoPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => trackEvent("demo_open_audit", { reelinId: sys.workOrder!.reelinId })}
-                    className="text-[10px] font-mono demo-status-focus break-all hover:underline"
+                    className="text-[10px] font-mono text-[var(--demo-text)] break-all hover:underline demo-field-focus demo-pill inline-block"
                   >
                     {sys.workOrder.reelinId}
                   </Link>
@@ -711,7 +699,11 @@ export default function DemoPage() {
                   <p className="demo-label">03 · ERP</p>
                   <p className="demo-heading mt-0.5">SAP PM</p>
                 </div>
-                <span className={`text-[10px] font-mono ${sys.approved ? "demo-status-ok" : phaseIndex(sys.phase) >= phaseIndex("review") ? "demo-status-warn" : ""}`}>
+                <span
+                  className={`text-[10px] font-mono demo-pill ${
+                    sys.approved ? "demo-field-ok" : phaseIndex(sys.phase) >= phaseIndex("review") ? "demo-field-warn" : ""
+                  }`}
+                >
                   {sys.approved ? "REL" : phaseIndex(sys.phase) >= phaseIndex("review") ? "DRF" : "—"}
                 </span>
               </div>
@@ -730,8 +722,10 @@ export default function DemoPage() {
                         <tr key={l.material} className="border-b border-[var(--demo-border-subtle)]">
                           <td className="py-1.5 font-mono text-[var(--demo-muted)]">{l.material}</td>
                           <td className="py-1.5 pr-2">{l.description}</td>
-                          <td className={`py-1.5 text-right ${l.status === "procure" ? "demo-status-warn" : "demo-status-ok"}`}>
-                            {l.status === "procure" ? "PR" : "OK"}
+                          <td className="py-1.5 text-right">
+                            <span className={`demo-pill ${l.status === "procure" ? "demo-field-warn" : "demo-field-ok"}`}>
+                              {l.status === "procure" ? "PR" : "OK"}
+                            </span>
                           </td>
                         </tr>
                       ))}
@@ -759,14 +753,14 @@ export default function DemoPage() {
                   </div>
                 )}
                 {phaseIndex(sys.phase) >= phaseIndex("review") && !sys.approved && !releaseOpen && (
-                  <div className="border border-[var(--demo-warn)] p-3 bg-[var(--demo-warn-soft)]">
-                    <p className="text-[12px] font-medium demo-status-warn">Awaiting engineer release</p>
+                  <div className="demo-field-warn p-3">
+                    <p className="text-[12px] font-medium">Awaiting engineer release</p>
                     <p className="text-[11px] text-[var(--demo-muted)] mt-1">No SAP RELEASE executed. HITL-01 enforced — use Engineer approval to add notes and release.</p>
                   </div>
                 )}
                 {sys.approved && (
-                  <div className="border border-[var(--demo-ok)] p-3 bg-[var(--demo-ok-soft)]">
-                    <p className="text-[12px] font-medium demo-status-ok">Released to planning · WO {SAP_RELEASED_WO}</p>
+                  <div className="demo-field-ok p-3">
+                    <p className="text-[12px] font-medium">Released to planning · WO {SAP_RELEASED_WO}</p>
                     {sys.engineerNotes && (
                       <p className="text-[11px] text-[var(--demo-muted)] mt-2 whitespace-pre-wrap">{sys.engineerNotes}</p>
                     )}
@@ -775,7 +769,7 @@ export default function DemoPage() {
                         href={auditPagePath(sys.workOrder.reelinId)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-block mt-3 text-[11px] demo-status-focus hover:underline"
+                        className="inline-block mt-3 text-[11px] text-[var(--demo-text)] hover:underline"
                       >
                         View sealed audit trail →
                       </Link>

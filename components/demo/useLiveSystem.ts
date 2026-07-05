@@ -13,6 +13,7 @@ import {
   type SimPhase,
   type WorkOrderDraft,
 } from "@/lib/demo/scenarios";
+import { playAlertChime, unlockAlertAudio } from "@/lib/demo/alertSound";
 import {
   appendAuditPhase,
   attachWorkOrderToAudit,
@@ -60,7 +61,7 @@ function historyKey(assetId: AssetId, label: string) {
   return `${assetId}::${label}`;
 }
 
-export function useLiveSystem(initialAsset: AssetId = "p2047", onBreach?: () => void) {
+export function useLiveSystem(initialAsset: AssetId = "p2047") {
   const [selectedAssetId, setSelectedAssetId] = useState<AssetId>(initialAsset);
   const [incidentAssetId, setIncidentAssetId] = useState<AssetId>(initialAsset);
   const [severity, setSeverity] = useState<Severity>("warning");
@@ -91,13 +92,15 @@ export function useLiveSystem(initialAsset: AssetId = "p2047", onBreach?: () => 
   const selectedAssetRef = useRef<AssetId>(initialAsset);
   const severityRef = useRef<Severity>("warning");
   const breachAlertRef = useRef(false);
+  const alertPlayedRef = useRef(false);
   const auditPhaseRef = useRef<Set<SimPhase>>(new Set());
   const reelinIdRef = useRef<string | null>(null);
-  const onBreachRef = useRef(onBreach);
 
-  useEffect(() => {
-    onBreachRef.current = onBreach;
-  }, [onBreach]);
+  const fireAlertSound = useCallback(() => {
+    if (alertPlayedRef.current) return;
+    alertPlayedRef.current = true;
+    playAlertChime();
+  }, []);
 
   const asset = ASSETS[selectedAssetId];
   const incidentAsset = ASSETS[incidentAssetId];
@@ -223,7 +226,11 @@ export function useLiveSystem(initialAsset: AssetId = "p2047", onBreach?: () => 
     setAuditRecord(null);
     auditPhaseRef.current = new Set();
     breachAlertRef.current = false;
+    alertPlayedRef.current = false;
     reelinIdRef.current = null;
+    unlockAlertAudio();
+    const alertTimer = window.setTimeout(() => fireAlertSound(), RAMP_TICKS * TICK_MS);
+    timersRef.current.push(alertTimer);
 
     const targetId = selectedAssetRef.current;
     setIncidentAssetId(targetId);
@@ -249,7 +256,7 @@ export function useLiveSystem(initialAsset: AssetId = "p2047", onBreach?: () => 
       }
     }, TICK_MS);
     timersRef.current.push(rampTimer as unknown as number);
-  }, [clearTimers, runResponsePipeline]);
+  }, [clearTimers, runResponsePipeline, fireAlertSound]);
 
   const resetMonitoring = useCallback(() => {
     clearTimers();
@@ -264,6 +271,7 @@ export function useLiveSystem(initialAsset: AssetId = "p2047", onBreach?: () => 
     setAuditRecord(null);
     auditPhaseRef.current = new Set();
     breachAlertRef.current = false;
+    alertPlayedRef.current = false;
     reelinIdRef.current = null;
     setVisibleLogs(1);
     setElapsed(0);
@@ -329,9 +337,9 @@ export function useLiveSystem(initialAsset: AssetId = "p2047", onBreach?: () => 
     const breached = incidentReadings.some((r) => r.breached);
     if (breached && !breachAlertRef.current) {
       breachAlertRef.current = true;
-      onBreachRef.current?.();
+      fireAlertSound();
     }
-  }, [incidentReadings, mode]);
+  }, [incidentReadings, mode, fireAlertSound]);
 
   useEffect(() => {
     const id = window.setInterval(() => {

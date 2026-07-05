@@ -72,7 +72,7 @@ export default function AuditPage() {
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         {usingFallback && (
-          <div className="border border-[var(--demo-warn)] bg-[var(--demo-warn-soft)] px-4 py-3 text-[12px]">
+          <div className="demo-field-warn px-4 py-3 mb-4 text-[12px]">
             Sample audit record — run a live incident on the demo to populate a session-bound trail.
           </div>
         )}
@@ -84,10 +84,8 @@ export default function AuditPage() {
               <p className="mt-1 text-[13px] font-mono break-all">{record.reelinId}</p>
             </div>
             <span
-              className={`self-start px-2.5 py-1 text-[11px] font-medium border ${
-                record.status === "sealed"
-                  ? "border-[var(--demo-ok)] bg-[var(--demo-ok-soft)] demo-status-ok"
-                  : "border-[var(--demo-warn)] bg-[var(--demo-warn-soft)] demo-status-warn"
+              className={`self-start demo-pill px-2.5 py-1 text-[11px] font-medium ${
+                record.status === "sealed" ? "demo-field-ok" : "demo-field-warn"
               }`}
             >
               {record.status === "sealed" ? "Sealed" : "Open session"}
@@ -107,7 +105,7 @@ export default function AuditPage() {
             </div>
             <div>
               <p className="demo-label">Alert</p>
-              <p className="mt-1 font-mono demo-status-warn">{record.alertCode}</p>
+              <p className="mt-1 font-mono demo-pill demo-field-warn inline-block">{record.alertCode}</p>
             </div>
             <div>
               <p className="demo-label">Session opened</p>
@@ -122,7 +120,7 @@ export default function AuditPage() {
             {record.sapWorkOrder && (
               <div>
                 <p className="demo-label">SAP work order</p>
-                <p className="mt-1 font-mono demo-status-ok">{record.sapWorkOrder}</p>
+                <p className="mt-1 font-mono demo-pill demo-field-ok inline-block">{record.sapWorkOrder}</p>
               </div>
             )}
           </div>

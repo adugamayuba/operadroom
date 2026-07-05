@@ -31,10 +31,10 @@ function MiniSparkline({ data }: { data: number[] }) {
 }
 
 function statusLabel(s: AssetHealthSummary["status"]) {
-  if (s === "breached") return { text: "Alert", className: "demo-status-alert" };
-  if (s === "incident") return { text: "Event", className: "demo-status-warn" };
-  if (s === "selected") return { text: "Focus", className: "demo-status-focus" };
-  return { text: "OK", className: "demo-status-ok" };
+  if (s === "breached") return { text: "Alert", field: "demo-field-alert" };
+  if (s === "incident") return { text: "Event", field: "demo-field-warn" };
+  if (s === "selected") return { text: "Focus", field: "demo-field-focus" };
+  return { text: "OK", field: "demo-field-ok" };
 }
 
 export function TwinViewer3D({
@@ -82,10 +82,10 @@ export function TwinViewer3D({
           </div>
         </div>
         <div className="flex border border-[var(--demo-border)] text-[11px] shrink-0">
-          <button type="button" onClick={() => setView("facility")} className={`px-3 py-1.5 ${view === "facility" ? "bg-[var(--demo-focus)] text-white" : "text-[var(--demo-muted)]"}`}>
+          <button type="button" onClick={() => setView("facility")} className={`px-3 py-1.5 ${view === "facility" ? "demo-field-focus text-[var(--demo-text)]" : "text-[var(--demo-muted)]"}`}>
             Plant
           </button>
-          <button type="button" onClick={() => setView("asset")} className={`px-3 py-1.5 border-l border-[var(--demo-border)] ${view === "asset" ? "bg-[var(--demo-focus)] text-white" : "text-[var(--demo-muted)]"}`}>
+          <button type="button" onClick={() => setView("asset")} className={`px-3 py-1.5 border-l border-[var(--demo-border)] ${view === "asset" ? "demo-field-focus text-[var(--demo-text)]" : "text-[var(--demo-muted)]"}`}>
             Asset detail
           </button>
         </div>
@@ -130,7 +130,7 @@ export function TwinViewer3D({
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
                       <span className="text-[12px] font-medium">{summary.tag}</span>
-                      <span className={`text-[10px] ml-2 ${statusLabel(summary.status).className}`}>{statusLabel(summary.status).text}</span>
+                      <span className={`text-[10px] ml-2 demo-pill ${statusLabel(summary.status).field}`}>{statusLabel(summary.status).text}</span>
                     </div>
                     {primary && (
                       <MiniSparkline data={primary.history.length > 1 ? primary.history : [primary.baseline, primary.value]} />
