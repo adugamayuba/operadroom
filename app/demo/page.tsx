@@ -1,11 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { LogoMark } from "@/components/demo/LogoMark";
 import { useDemoTheme } from "@/components/demo/DemoThemeProvider";
+import { useAlertSound } from "@/components/demo/useAlertSound";
 import { TwinViewer3D } from "@/components/demo/TwinViewer3D";
-import { phaseIndex, useLiveSystem } from "@/components/demo/useLiveSystem";
+import { phaseIndex, SAP_RELEASED_WO, useLiveSystem } from "@/components/demo/useLiveSystem";
 import { trackEvent } from "@/lib/analytics";
+import { auditPagePath } from "@/lib/demo/auditTrail";
+import { emailWorkOrderToPlanning, exportWorkOrderPdf, PLANNING_RECIPIENTS } from "@/lib/demo/workOrderExport";
 import { ASSET_LIST, FACILITY, getSeverityMeta, type Severity, type SimPhase } from "@/lib/demo/scenarios";
 import type { AssetHealthSummary, FixCandidate } from "@/lib/demo/liveSystem";
 import type { WorkOrderDraft } from "@/lib/demo/scenarios";
@@ -21,7 +25,21 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
-function DemoNav({ uptimeSec, scanCount, normalCount, totalAssets }: { uptimeSec: number; scanCount: number; normalCount: number; totalAssets: number }) {
+function DemoNav({
+  uptimeSec,
+  scanCount,
+  normalCount,
+  totalAssets,
+  soundEnabled,
+  onSoundToggle,
+}: {
+  uptimeSec: number;
+  scanCount: number;
+  normalCount: number;
+  totalAssets: number;
+  soundEnabled: boolean;
+  onSoundToggle: () => void;
+}) {
   const { theme, toggle } = useDemoTheme();
   return (
     <header className="fixed top-0 inset-x-0 z-50 bg-[var(--demo-surface)] border-b border-[var(--demo-border)] pt-[env(safe-area-inset-top)]">
@@ -39,11 +57,99 @@ function DemoNav({ uptimeSec, scanCount, normalCount, totalAssets }: { uptimeSec
           <span>Scan #{scanCount}</span>
           <span>Uptime {formatUptime(uptimeSec)}</span>
         </div>
-        <button type="button" onClick={toggle} className="text-[11px] border border-[var(--demo-border)] px-2.5 py-1 text-[var(--demo-muted)] shrink-0">
-          {theme === "light" ? "Dark" : "Light"}
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={onSoundToggle}
+            title={soundEnabled ? "Alert sound on" : "Alert sound off"}
+            className={`text-[11px] border px-2.5 py-1 ${
+              soundEnabled ? "border-[var(--demo-warn)] bg-[var(--demo-warn-soft)] demo-status-warn" : "border-[var(--demo-border)] text-[var(--demo-muted)]"
+            }`}
+          >
+            {soundEnabled ? "Sound on" : "Sound off"}
+          </button>
+          <button type="button" onClick={toggle} className="text-[11px] border border-[var(--demo-border)] px-2.5 py-1 text-[var(--demo-muted)]">
+            {theme === "light" ? "Dark" : "Light"}
+          </button>
+        </div>
       </div>
     </header>
+  );
+}
+
+function WorkOrderDispatchPanel({
+  workOrder,
+  sapNumber,
+  engineerNotes,
+  approved,
+  onEmail,
+  emailing,
+}: {
+  workOrder: WorkOrderDraft;
+  sapNumber: string;
+  engineerNotes?: string;
+  approved: boolean;
+  onEmail: () => void;
+  emailing: boolean;
+}) {
+  const exportPdf = () => {
+    trackEvent("demo_export_wo_pdf", { sapNumber, approved });
+    exportWorkOrderPdf(workOrder, {
+      sapNumber,
+      engineerNotes,
+      reelinId: workOrder.reelinId,
+    });
+  };
+
+  return (
+    <div className="border border-[var(--demo-border-subtle)] p-3 bg-[var(--demo-surface-2)] space-y-3 demo-fade-in">
+      <div>
+        <p className="demo-label">Dispatch to maintenance planning</p>
+        <p className="text-[11px] text-[var(--demo-muted)] mt-1">
+          {approved ? "Released work order packaged for SAP PM and planning distribution." : "Draft notification — RELEASE still blocked until engineer approval."}
+        </p>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" onClick={exportPdf} className="demo-btn-secondary text-[11px] py-2 px-3">
+          Export PDF
+        </button>
+        <button type="button" onClick={onEmail} disabled={emailing} className="demo-btn-secondary text-[11px] py-2 px-3">
+          {emailing ? "Sending…" : approved ? "Email to planning" : "Email draft to planning"}
+        </button>
+      </div>
+      <p className="text-[10px] text-[var(--demo-faint)] font-mono truncate">
+        {PLANNING_RECIPIENTS.join(" · ")}
+      </p>
+    </div>
+  );
+}
+
+function EmailToast({
+  visible,
+  messageId,
+  onDismiss,
+}: {
+  visible: boolean;
+  messageId?: string;
+  onDismiss: () => void;
+}) {
+  useEffect(() => {
+    if (!visible) return;
+    const t = window.setTimeout(onDismiss, 6000);
+    return () => clearTimeout(t);
+  }, [visible, onDismiss]);
+
+  if (!visible) return null;
+
+  return (
+    <div className="fixed bottom-6 right-4 z-[60] max-w-sm border border-[var(--demo-ok)] bg-[var(--demo-ok-soft)] p-4 shadow-lg demo-fade-in">
+      <p className="text-[12px] font-medium demo-status-ok">Work order emailed to maintenance planning</p>
+      <p className="text-[11px] text-[var(--demo-muted)] mt-1">{PLANNING_RECIPIENTS[0]} + {PLANNING_RECIPIENTS.length - 1} others</p>
+      {messageId && <p className="text-[10px] font-mono text-[var(--demo-faint)] mt-2 break-all">{messageId}</p>}
+      <button type="button" onClick={onDismiss} className="mt-3 text-[11px] demo-status-focus underline">
+        Dismiss
+      </button>
+    </div>
   );
 }
 
@@ -321,11 +427,16 @@ function EngineerReleasePanel({
 }
 
 export default function DemoPage() {
-  const sys = useLiveSystem("p2047");
+  const { enabled: soundEnabled, toggle: toggleSound, playIfEnabled } = useAlertSound();
+  const sys = useLiveSystem("p2047", playIfEnabled);
   const meta = getSeverityMeta(sys.severity);
   const incidentTag = sys.mode === "incident" ? sys.asset.tag : null;
   const [releaseOpen, setReleaseOpen] = useState(false);
   const [releaseNotes, setReleaseNotes] = useState("");
+  const [emailing, setEmailing] = useState(false);
+  const [emailToast, setEmailToast] = useState<{ visible: boolean; messageId?: string }>({ visible: false });
+
+  const sapNumber = sys.sapWorkOrder ?? "DRAFT";
 
   useEffect(() => {
     if (!sys.canApprove) setReleaseOpen(false);
@@ -337,6 +448,22 @@ export default function DemoPage() {
       setReleaseNotes("");
     }
   }, [sys.approved]);
+
+  const sendWorkOrderEmail = async (auto = false) => {
+    if (!sys.workOrder) return;
+    setEmailing(true);
+    trackEvent("demo_email_wo", { sapNumber, auto, approved: sys.approved });
+    try {
+      const result = await emailWorkOrderToPlanning(sys.workOrder, {
+        sapNumber,
+        engineerNotes: sys.engineerNotes || releaseNotes,
+        reelinId: sys.workOrder.reelinId,
+      });
+      setEmailToast({ visible: true, messageId: result.messageId });
+    } finally {
+      setEmailing(false);
+    }
+  };
 
   const handleTrigger = () => {
     trackEvent("demo_trigger_anomaly", { asset: sys.assetId, severity: sys.severity });
@@ -350,18 +477,41 @@ export default function DemoPage() {
     setReleaseNotes("");
   };
 
-  const handleRelease = () => {
+  const handleRelease = async () => {
+    const notes = releaseNotes.trim();
+    const wo = sys.workOrder;
     trackEvent("demo_approve", {
       asset: sys.assetId,
       severity: sys.severity,
-      hasNotes: releaseNotes.trim().length > 0,
+      hasNotes: notes.length > 0,
     });
     sys.approveWorkOrder(releaseNotes);
+    if (!wo) return;
+    setEmailing(true);
+    trackEvent("demo_email_wo", { sapNumber: SAP_RELEASED_WO, auto: true, approved: true });
+    try {
+      const result = await emailWorkOrderToPlanning(wo, {
+        sapNumber: SAP_RELEASED_WO,
+        engineerNotes: notes,
+        reelinId: wo.reelinId,
+      });
+      setEmailToast({ visible: true, messageId: result.messageId });
+    } finally {
+      setEmailing(false);
+    }
   };
 
   return (
     <>
-      <DemoNav uptimeSec={sys.uptimeSec} scanCount={sys.scanCount} normalCount={sys.normalCount} totalAssets={sys.totalAssets} />
+      <DemoNav
+        uptimeSec={sys.uptimeSec}
+        scanCount={sys.scanCount}
+        normalCount={sys.normalCount}
+        totalAssets={sys.totalAssets}
+        soundEnabled={soundEnabled}
+        onSoundToggle={toggleSound}
+      />
+      <EmailToast visible={emailToast.visible} messageId={emailToast.messageId} onDismiss={() => setEmailToast({ visible: false })} />
       <main className="pt-14 pb-12">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 space-y-4">
           <div className="py-5 border-b border-[var(--demo-border-subtle)]">
@@ -540,8 +690,17 @@ export default function DemoPage() {
                 )}
               </div>
               {sys.workOrder?.reelinId && phaseIndex(sys.phase) >= phaseIndex("review") && (
-                <div className="px-4 py-2 border-t border-[var(--demo-border-subtle)] text-[10px] font-mono text-[var(--demo-muted)] break-all">
-                  {sys.workOrder.reelinId}
+                <div className="px-4 py-2 border-t border-[var(--demo-border-subtle)]">
+                  <p className="demo-label mb-1">Reelin ID · audit trail</p>
+                  <Link
+                    href={auditPagePath(sys.workOrder.reelinId)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => trackEvent("demo_open_audit", { reelinId: sys.workOrder!.reelinId })}
+                    className="text-[10px] font-mono demo-status-focus break-all hover:underline"
+                  >
+                    {sys.workOrder.reelinId}
+                  </Link>
                 </div>
               )}
             </div>
@@ -583,7 +742,7 @@ export default function DemoPage() {
                   <div className="border border-[var(--demo-border)] demo-fade-in">
                     <div className="px-3 py-2 border-b border-[var(--demo-border-subtle)] bg-[var(--demo-surface-2)] flex justify-between">
                       <span className="text-[11px] font-medium">Work order</span>
-                      <span className="font-mono text-[10px] text-[var(--demo-muted)]">{sys.approved ? "9001847" : "DRAFT"}</span>
+                      <span className="font-mono text-[10px] text-[var(--demo-muted)]">{sys.approved ? SAP_RELEASED_WO : "DRAFT"}</span>
                     </div>
                     <div className="p-3 text-[11px] space-y-1">
                       <p><span className="text-[var(--demo-faint)]">Type</span> · {sys.workOrder.orderType}</p>
@@ -607,11 +766,31 @@ export default function DemoPage() {
                 )}
                 {sys.approved && (
                   <div className="border border-[var(--demo-ok)] p-3 bg-[var(--demo-ok-soft)]">
-                    <p className="text-[12px] font-medium demo-status-ok">Released to planning · WO 9001847</p>
+                    <p className="text-[12px] font-medium demo-status-ok">Released to planning · WO {SAP_RELEASED_WO}</p>
                     {sys.engineerNotes && (
                       <p className="text-[11px] text-[var(--demo-muted)] mt-2 whitespace-pre-wrap">{sys.engineerNotes}</p>
                     )}
+                    {sys.workOrder?.reelinId && (
+                      <Link
+                        href={auditPagePath(sys.workOrder.reelinId)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block mt-3 text-[11px] demo-status-focus hover:underline"
+                      >
+                        View sealed audit trail →
+                      </Link>
+                    )}
                   </div>
+                )}
+                {sys.workOrder && phaseIndex(sys.phase) >= phaseIndex("draft") && (
+                  <WorkOrderDispatchPanel
+                    workOrder={sys.workOrder}
+                    sapNumber={sapNumber}
+                    engineerNotes={sys.engineerNotes || undefined}
+                    approved={sys.approved}
+                    emailing={emailing}
+                    onEmail={() => sendWorkOrderEmail(false)}
+                  />
                 )}
                 {phaseIndex(sys.phase) < phaseIndex("inventory") && sys.mode === "monitoring" && (
                   <p className="text-[12px] text-[var(--demo-muted)]">Standing by — all assets within baseline…</p>

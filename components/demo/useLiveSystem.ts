@@ -11,7 +11,15 @@ import {
   type AssetId,
   type Severity,
   type SimPhase,
+  type WorkOrderDraft,
 } from "@/lib/demo/scenarios";
+import {
+  appendAuditPhase,
+  attachWorkOrderToAudit,
+  createAuditRecord,
+  sealAuditRecord,
+  type AuditRecord,
+} from "@/lib/demo/auditTrail";
 import {
   buildFacilitySnapshot,
   buildFixCandidates,
@@ -28,6 +36,7 @@ import {
 
 const TICK_MS = 1200;
 const RAMP_TICKS = 4;
+export const SAP_RELEASED_WO = "9001847";
 
 export function phaseIndex(phase: SimPhase): number {
   const order: SimPhase[] = [
@@ -51,7 +60,7 @@ function historyKey(assetId: AssetId, label: string) {
   return `${assetId}::${label}`;
 }
 
-export function useLiveSystem(initialAsset: AssetId = "p2047") {
+export function useLiveSystem(initialAsset: AssetId = "p2047", onBreach?: () => void) {
   const [selectedAssetId, setSelectedAssetId] = useState<AssetId>(initialAsset);
   const [incidentAssetId, setIncidentAssetId] = useState<AssetId>(initialAsset);
   const [severity, setSeverity] = useState<Severity>("warning");
@@ -61,6 +70,8 @@ export function useLiveSystem(initialAsset: AssetId = "p2047") {
   const [visibleLogs, setVisibleLogs] = useState(1);
   const [approved, setApproved] = useState(false);
   const [engineerNotes, setEngineerNotes] = useState("");
+  const [lockedWorkOrder, setLockedWorkOrder] = useState<WorkOrderDraft | null>(null);
+  const [auditRecord, setAuditRecord] = useState<AuditRecord | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [lastScan, setLastScan] = useState(new Date());
   const [uptimeSec, setUptimeSec] = useState(0);
@@ -79,20 +90,24 @@ export function useLiveSystem(initialAsset: AssetId = "p2047") {
   const incidentAssetRef = useRef<AssetId>(initialAsset);
   const selectedAssetRef = useRef<AssetId>(initialAsset);
   const severityRef = useRef<Severity>("warning");
+  const breachAlertRef = useRef(false);
+  const auditPhaseRef = useRef<Set<SimPhase>>(new Set());
+  const reelinIdRef = useRef<string | null>(null);
+  const onBreachRef = useRef(onBreach);
+
+  useEffect(() => {
+    onBreachRef.current = onBreach;
+  }, [onBreach]);
 
   const asset = ASSETS[selectedAssetId];
+  const incidentAsset = ASSETS[incidentAssetId];
   const selectedReadings = facilityReadings[selectedAssetId] ?? [];
+  const incidentReadings = facilityReadings[incidentAssetId] ?? [];
 
   const assetSummaries: AssetHealthSummary[] = useMemo(
     () =>
       ASSET_LIST.map((a) =>
-        summarizeAsset(
-          a,
-          facilityReadings[a.id] ?? [],
-          selectedAssetId,
-          incidentAssetId,
-          mode
-        )
+        summarizeAsset(a, facilityReadings[a.id] ?? [], selectedAssetId, incidentAssetId, mode)
       ),
     [facilityReadings, selectedAssetId, incidentAssetId, mode]
   );
@@ -115,10 +130,7 @@ export function useLiveSystem(initialAsset: AssetId = "p2047") {
     () => buildLiveAgentLogs(asset, severity, buildManualMatch(asset, severity), inventory, fixes),
     [asset, severity, inventory, fixes]
   );
-  const workOrder = useMemo(
-    () => (phaseIndex(phase) >= phaseIndex("draft") ? buildWorkOrder(asset, severity, inventory) : null),
-    [asset, severity, inventory, phase]
-  );
+  const workOrder = lockedWorkOrder;
 
   const readingsWithHistory = useMemo(
     () =>
@@ -149,11 +161,34 @@ export function useLiveSystem(initialAsset: AssetId = "p2047") {
     }
   }, []);
 
+  const syncAuditPhase = useCallback((nextPhase: SimPhase, record: AuditRecord | null) => {
+    if (!record || auditPhaseRef.current.has(nextPhase)) return record;
+    if (phaseIndex(nextPhase) < phaseIndex("detecting")) return record;
+    auditPhaseRef.current.add(nextPhase);
+    const updated = appendAuditPhase(record, nextPhase);
+    setAuditRecord(updated);
+    return updated;
+  }, []);
+
   const runResponsePipeline = useCallback(() => {
     clearTimers();
     setVisibleLogs(0);
     incidentStartRef.current = Date.now();
     setPhase("detecting");
+
+    const target = ASSETS[incidentAssetRef.current];
+    const inv = buildInventory(target, severityRef.current);
+    const fixList = buildFixCandidates(target, severityRef.current);
+    reelinIdRef.current = `rid:agent:operadroom:rhn-${Date.now().toString(36)}`;
+    const record = createAuditRecord({
+      reelinId: reelinIdRef.current,
+      assetTag: target.tag,
+      assetName: target.name,
+      severity: severityRef.current,
+      selectedFix: fixList.find((f) => f.selected)?.title,
+    });
+    auditPhaseRef.current.add("detecting");
+    setAuditRecord(record);
 
     logIntervalRef.current = window.setInterval(() => {
       setVisibleLogs((v) => Math.min(logs.length, v + 1));
@@ -183,8 +218,17 @@ export function useLiveSystem(initialAsset: AssetId = "p2047") {
     if (modeRef.current !== "monitoring") return;
     clearTimers();
     setApproved(false);
-    setIncidentAssetId(selectedAssetRef.current);
-    incidentAssetRef.current = selectedAssetRef.current;
+    setEngineerNotes("");
+    setLockedWorkOrder(null);
+    setAuditRecord(null);
+    auditPhaseRef.current = new Set();
+    breachAlertRef.current = false;
+    reelinIdRef.current = null;
+
+    const targetId = selectedAssetRef.current;
+    setIncidentAssetId(targetId);
+    incidentAssetRef.current = targetId;
+
     setRamp(0);
     rampRef.current = 0;
     setMode("incident");
@@ -216,6 +260,11 @@ export function useLiveSystem(initialAsset: AssetId = "p2047") {
     rampRef.current = 0;
     setApproved(false);
     setEngineerNotes("");
+    setLockedWorkOrder(null);
+    setAuditRecord(null);
+    auditPhaseRef.current = new Set();
+    breachAlertRef.current = false;
+    reelinIdRef.current = null;
     setVisibleLogs(1);
     setElapsed(0);
   }, [clearTimers]);
@@ -225,13 +274,25 @@ export function useLiveSystem(initialAsset: AssetId = "p2047") {
     selectedAssetRef.current = id;
   }, []);
 
-  const approveWorkOrder = useCallback((notes: string) => {
-    setEngineerNotes(notes.trim());
-    setApproved(true);
-    setPhase("approved");
-    setMode("resolved");
-    modeRef.current = "resolved";
-  }, []);
+  const approveWorkOrder = useCallback(
+    (notes: string) => {
+      const trimmed = notes.trim();
+      setEngineerNotes(trimmed);
+      setApproved(true);
+      setPhase("approved");
+      setMode("resolved");
+      modeRef.current = "resolved";
+
+      if (auditRecord) {
+        const sealed = sealAuditRecord(auditRecord, {
+          engineerNotes: trimmed,
+          sapWorkOrder: SAP_RELEASED_WO,
+        });
+        setAuditRecord(sealed);
+      }
+    },
+    [auditRecord]
+  );
 
   useEffect(() => {
     selectedAssetRef.current = selectedAssetId;
@@ -241,7 +302,37 @@ export function useLiveSystem(initialAsset: AssetId = "p2047") {
     severityRef.current = severity;
   }, [severity]);
 
-  // Live facility-wide telemetry tick
+  useEffect(() => {
+    if (phaseIndex(phase) >= phaseIndex("draft") && !lockedWorkOrder && reelinIdRef.current) {
+      const wo = {
+        ...buildWorkOrder(incidentAsset, severity, inventory),
+        reelinId: reelinIdRef.current,
+      };
+      setLockedWorkOrder(wo);
+
+      setAuditRecord((prev) => {
+        if (!prev) return prev;
+        const withWo = attachWorkOrderToAudit(prev, wo);
+        auditPhaseRef.current.add("draft");
+        return appendAuditPhase(withWo, "draft");
+      });
+    }
+  }, [phase, incidentAsset, severity, inventory, lockedWorkOrder]);
+
+  useEffect(() => {
+    if (!auditRecord || phase === "monitoring" || phase === "telemetry") return;
+    syncAuditPhase(phase, auditRecord);
+  }, [phase, auditRecord, syncAuditPhase]);
+
+  useEffect(() => {
+    if (mode !== "incident") return;
+    const breached = incidentReadings.some((r) => r.breached);
+    if (breached && !breachAlertRef.current) {
+      breachAlertRef.current = true;
+      onBreachRef.current?.();
+    }
+  }, [incidentReadings, mode]);
+
   useEffect(() => {
     const id = window.setInterval(() => {
       setUptimeSec((u) => u + 1);
@@ -274,8 +365,27 @@ export function useLiveSystem(initialAsset: AssetId = "p2047") {
   useEffect(() => () => clearTimers(), [clearTimers]);
 
   const normalCount = assetSummaries.filter((s) => s.status === "normal" || s.status === "selected").length;
+
+  const releaseLog: AgentLogEntry | null =
+    approved && workOrder
+      ? {
+          id: "release",
+          phase: "approved",
+          timestamp: "Live",
+          level: "success",
+          message: "SAP RELEASE authorized · audit trail sealed",
+          detail: engineerNotes
+            ? `Engineer notes appended · WO ${SAP_RELEASED_WO} · ${workOrder.reelinId}`
+            : `WO ${SAP_RELEASED_WO} released to planning · ${workOrder.reelinId}`,
+        }
+      : null;
+
   const displayLogs: AgentLogEntry[] =
-    mode === "monitoring" ? [MONITORING_LOG(scanCount, ASSET_LIST.length)] : logs;
+    mode === "monitoring"
+      ? [MONITORING_LOG(scanCount, ASSET_LIST.length)]
+      : releaseLog
+        ? [...logs, releaseLog]
+        : logs;
 
   return {
     assetId: selectedAssetId,
@@ -294,13 +404,15 @@ export function useLiveSystem(initialAsset: AssetId = "p2047") {
     totalAssets: ASSET_LIST.length,
     scanCount,
     logs: displayLogs,
-    visibleLogs: mode === "monitoring" ? 1 : visibleLogs,
+    visibleLogs: mode === "monitoring" ? 1 : approved ? displayLogs.length : visibleLogs,
     manual,
     fixes,
     inventory,
     workOrder,
+    auditRecord,
     approved,
     engineerNotes,
+    sapWorkOrder: approved ? SAP_RELEASED_WO : null,
     elapsed,
     lastScan,
     uptimeSec,
