@@ -504,7 +504,7 @@ export default function DemoPage() {
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 space-y-4">
           <div className="py-5 border-b border-[var(--demo-border-subtle)]">
             <p className="demo-label">Rheinland POC · live operations sandbox</p>
-            <h1 className="mt-1 text-xl font-semibold">AI solution agent on standby · anomaly triggers the fix run</h1>
+            <h1 className="mt-1 text-xl font-semibold">AI Agent on Standby</h1>
             <p className="mt-2 text-[13px] text-[var(--demo-muted)] max-w-2xl">
               All {sys.totalAssets} assets connected. Focus equipment in the 3D twin or sidebar, inject an anomaly, and watch the agent search records, draft the work order, and route to engineer release.
             </p>
