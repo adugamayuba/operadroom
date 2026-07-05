@@ -6,6 +6,7 @@ import * as THREE from "three";
 import { useDemoTheme } from "@/components/demo/DemoThemeProvider";
 import type { AssetId, AssetKind, Severity } from "@/lib/demo/scenarios";
 import { ASSETS, ASSET_LIST } from "@/lib/demo/scenarios";
+import type { SystemMode } from "@/lib/demo/liveSystem";
 
 const SEVERITY_COLOR: Record<Severity, string> = {
   advisory: "#6b7280",
@@ -67,10 +68,12 @@ function FacilityScene({
   selectedId,
   severity,
   active,
+  onAssetSelect,
 }: {
   selectedId: AssetId;
   severity: Severity;
   active: boolean;
+  onAssetSelect?: (id: AssetId) => void;
 }) {
   const accent = active ? SEVERITY_COLOR[severity] : "#4b5563";
 
@@ -135,24 +138,46 @@ function FacilityScene({
         const { x, z } = asset.facilityPosition;
         return (
           <group key={asset.id} position={[x, 0.15, z]}>
-            <mesh>
-              <cylinderGeometry args={[selected ? 0.35 : 0.22, selected ? 0.35 : 0.22, 0.08, 16]} />
+            {selected && (
+              <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
+                <ringGeometry args={[0.45, 0.55, 32]} />
+                <meshBasicMaterial color={active ? accent : "#374151"} transparent opacity={0.85} />
+              </mesh>
+            )}
+            <mesh
+              onClick={(e) => {
+                e.stopPropagation();
+                onAssetSelect?.(asset.id);
+              }}
+              onPointerOver={(e) => {
+                e.stopPropagation();
+                document.body.style.cursor = "pointer";
+              }}
+              onPointerOut={() => {
+                document.body.style.cursor = "auto";
+              }}
+            >
+              <cylinderGeometry args={[selected ? 0.32 : 0.2, selected ? 0.32 : 0.2, 0.12, 16]} />
               <meshStandardMaterial
-                color={selected && active ? accent : selected ? "#374151" : "#9ca3af"}
+                color={selected ? (active ? accent : "#374151") : "#9ca3af"}
                 emissive={selected && active ? accent : "#000000"}
-                emissiveIntensity={selected && active ? 0.35 : 0}
+                emissiveIntensity={selected && active ? 0.25 : 0}
+                metalness={0.5}
+                roughness={0.4}
               />
             </mesh>
-            <Html distanceFactor={14} position={[0, 0.6, 0]} center>
-              <div
-                className={`px-1.5 py-0.5 text-[9px] whitespace-nowrap border ${
+            <Html distanceFactor={14} position={[0, 0.75, 0]} center style={{ pointerEvents: "none" }}>
+              <button
+                type="button"
+                onClick={() => onAssetSelect?.(asset.id)}
+                className={`px-1.5 py-0.5 text-[9px] whitespace-nowrap border cursor-pointer ${
                   selected
-                    ? "border-[var(--demo-text)] bg-[var(--demo-bg)] text-[var(--demo-text)] font-medium"
-                    : "border-[var(--demo-border)] bg-[var(--demo-surface)] text-[var(--demo-muted)]"
+                    ? "border-[var(--demo-text)] bg-[var(--demo-bg)] text-[var(--demo-text)] font-semibold"
+                    : "border-[var(--demo-border)] bg-[var(--demo-surface)] text-[var(--demo-muted)] hover:border-[var(--demo-muted)]"
                 }`}
               >
                 {asset.tag}
-              </div>
+              </button>
             </Html>
           </group>
         );
@@ -380,6 +405,8 @@ export function TwinCanvas({
   severity,
   active,
   facilityPosition,
+  onAssetSelect,
+  mode,
 }: {
   view: "facility" | "asset";
   assetId: AssetId;
@@ -387,13 +414,17 @@ export function TwinCanvas({
   severity: Severity;
   active: boolean;
   facilityPosition: { x: number; z: number };
+  onAssetSelect?: (id: AssetId) => void;
+  mode?: SystemMode;
 }) {
   const { theme } = useDemoTheme();
   const asset = ASSETS[assetId];
-  const canvasBg = theme === "light" ? "#e2e5ea" : "#181b1f";
+  const canvasBg = theme === "light" ? "#dce0e6" : "#141820";
+  const incident = mode === "incident";
 
   return (
-    <Canvas shadows dpr={[1, 1.5]} gl={{ antialias: true }}>
+    <Canvas shadows dpr={[1, 1.5]} gl={{ antialias: true }} style={{ touchAction: "none" }}>
+      <fog attach="fog" args={[canvasBg, 18, 45]} />
       <color attach="background" args={[canvasBg]} />
       <PerspectiveCamera makeDefault position={view === "facility" ? [14, 12, 14] : [4, 3, 5]} fov={45} />
       <OrbitControls
@@ -405,9 +436,9 @@ export function TwinCanvas({
         target={view === "facility" ? [facilityPosition.x, 1, facilityPosition.z] : [0, 0.8, 0]}
       />
       {view === "facility" ? (
-        <FacilityScene selectedId={assetId} severity={severity} active={active} />
+        <FacilityScene selectedId={assetId} severity={severity} active={active || incident} onAssetSelect={onAssetSelect} />
       ) : (
-        <AssetScene kind={assetKind} severity={severity} active={active} tag={asset.tag} />
+        <AssetScene kind={assetKind} severity={severity} active={active || incident} tag={asset.tag} />
       )}
     </Canvas>
   );

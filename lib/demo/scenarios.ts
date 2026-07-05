@@ -1,10 +1,14 @@
 export type Severity = "advisory" | "warning" | "critical";
 
 export type SimPhase =
-  | "idle"
+  | "monitoring"
+  | "detecting"
   | "telemetry"
   | "ingest"
+  | "records"
   | "diagnose"
+  | "analyze"
+  | "select"
   | "inventory"
   | "draft"
   | "review"
