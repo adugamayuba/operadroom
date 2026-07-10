@@ -247,9 +247,6 @@ function HeroSection() {
           <GhostButton href="#pilot" eventName="cta_click" eventProps={{ action: "request_pilot", location: "hero" }}>
             Request Pilot
           </GhostButton>
-          <GhostButton href="/demo" eventName="cta_click" eventProps={{ action: "view_demo", location: "hero" }}>
-            View Pilot Demo
-          </GhostButton>
           <GhostButton href="#platform" eventName="cta_click" eventProps={{ action: "explore_platform", location: "hero" }}>
             Explore Platform
           </GhostButton>
