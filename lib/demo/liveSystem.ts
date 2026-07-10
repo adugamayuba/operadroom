@@ -180,15 +180,15 @@ export function buildFixCandidates(asset: AssetScenario, severity: Severity): Fi
 }
 
 export const RESPONSE_STEPS: { phase: SimPhase; label: string; durationMs: number }[] = [
-  { phase: "detecting", label: "Anomaly detection", durationMs: 1400 },
-  { phase: "ingest", label: "Alert normalization", durationMs: 1600 },
-  { phase: "records", label: "Internal records", durationMs: 2200 },
+  { phase: "detecting", label: "Trigger event", durationMs: 1400 },
+  { phase: "ingest", label: "Tag + P&ID link", durationMs: 1600 },
+  { phase: "records", label: "Aggregate records", durationMs: 2200 },
   { phase: "diagnose", label: "Root cause", durationMs: 2000 },
-  { phase: "analyze", label: "Fix analysis", durationMs: 2800 },
-  { phase: "select", label: "Procedure selection", durationMs: 1600 },
+  { phase: "analyze", label: "ESSA analyze", durationMs: 2800 },
+  { phase: "select", label: "Standardize fix", durationMs: 1600 },
   { phase: "inventory", label: "SAP MM", durationMs: 2000 },
-  { phase: "draft", label: "Work order", durationMs: 2200 },
-  { phase: "review", label: "Human review", durationMs: 1400 },
+  { phase: "draft", label: "Draft work order", durationMs: 2200 },
+  { phase: "review", label: "Engineer release", durationMs: 1400 },
 ];
 
 export function buildLiveAgentLogs(
@@ -203,21 +203,21 @@ export function buildLiveAgentLogs(
   const rejected = fixes.filter((f) => !f.selected);
 
   return [
-    { id: "1", phase: "detecting", timestamp: "Live", level: "warn", message: `Threshold breach on ${asset.tag}`, detail: `${meta.alertCode} · Cognite stream · Auto-escalation enabled` },
-    { id: "2", phase: "ingest", timestamp: "T+0.6s", level: "info", message: "Alert normalized to SAP equipment master", detail: `${asset.functionalLocation} · Duplicate check passed` },
-    { id: "3", phase: "ingest", timestamp: "T+1.1s", level: "info", message: "PI Historian trend correlated", detail: "14-day slope confirms degradation · Not transient spike" },
-    { id: "4", phase: "records", timestamp: "T+1.8s", level: "action", message: "Internal maintenance records queried", detail: `847 documents · 12 prior WOs for ${asset.tag} · 3 OEM manuals` },
-    { id: "5", phase: "records", timestamp: "T+2.4s", level: "success", message: "Relevant corpus retrieved", detail: `${manual.source} · ${manual.section}` },
-    { id: "6", phase: "diagnose", timestamp: "T+3.0s", level: "action", message: "Root cause model executed", detail: `Primary: ${asset.kind} degradation · Confidence ${(manual.confidence * 100).toFixed(0)}%` },
-    { id: "7", phase: "analyze", timestamp: "T+3.8s", level: "action", message: `Evaluating ${fixes.length} corrective procedures`, detail: rejected.map((f) => `${f.title} (${(f.score * 100).toFixed(0)}%)`).join(" · ") },
-    { id: "8", phase: "analyze", timestamp: "T+4.6s", level: "info", message: "Multi-criteria analysis: downtime, spares, safety, SLA", detail: `Response window ${meta.responseWindow} · Plant load 94%` },
-    { id: "9", phase: "select", timestamp: "T+5.2s", level: "success", message: `Selected: ${selected.title}`, detail: `${selected.source} · Score ${(selected.score * 100).toFixed(0)}% · Est. ${selected.downtimeHours}h downtime` },
-    { id: "10", phase: "inventory", timestamp: "T+5.9s", level: "action", message: "SAP MM availability check", detail: `${inventory.length} BOM lines · ${inventory.filter((i) => i.status === "procure").length} PR draft(s)` },
-    { id: "11", phase: "inventory", timestamp: "T+6.4s", level: inventory.some((i) => i.status === "procure") ? "warn" : "success", message: inventory.some((i) => i.status === "procure") ? "Partial stock — procurement draft created" : "All spares reserved" },
-    { id: "12", phase: "draft", timestamp: "T+7.1s", level: "action", message: "SAP PM work order composed", detail: `${meta.orderType} · ${meta.priority}` },
-    { id: "13", phase: "draft", timestamp: "T+7.8s", level: "success", message: "Operations linked to selected procedure", detail: selected.title },
+    { id: "1", phase: "detecting", timestamp: "Live", level: "warn", message: `Maintenance event on ${asset.tag}`, detail: `${meta.alertCode} · PI threshold · POC process AM-05 armed` },
+    { id: "2", phase: "ingest", timestamp: "T+0.6s", level: "info", message: "Tag master + P&ID node resolved", detail: `${asset.tag} ↔ Sheet 2047-A · FL ${asset.functionalLocation}` },
+    { id: "3", phase: "ingest", timestamp: "T+1.1s", level: "info", message: "Alert normalized to SAP equipment master", detail: "Duplicate WO check passed · Cognite twin in sync" },
+    { id: "4", phase: "records", timestamp: "T+1.8s", level: "action", message: "ESSA Aggregate — records fused", detail: `847 docs · 12 prior WOs · 3 OEM manuals · field notes indexed` },
+    { id: "5", phase: "records", timestamp: "T+2.4s", level: "success", message: "Standard procedure corpus retrieved", detail: `${manual.source} · ${manual.section}` },
+    { id: "6", phase: "diagnose", timestamp: "T+3.0s", level: "action", message: "Root cause ranked for execution", detail: `${asset.kind} degradation · Confidence ${(manual.confidence * 100).toFixed(0)}%` },
+    { id: "7", phase: "analyze", timestamp: "T+3.8s", level: "action", message: `Safe Isolation paths scored · ${fixes.length} procedures`, detail: rejected.map((f) => `${f.title} (${(f.score * 100).toFixed(0)}%)`).join(" · ") },
+    { id: "8", phase: "analyze", timestamp: "T+4.6s", level: "info", message: "ESSA Simplify — single ranked execution path", detail: `Downtime · spares · ISSoW · window ${meta.responseWindow}` },
+    { id: "9", phase: "select", timestamp: "T+5.2s", level: "success", message: `Standardized fix: ${selected.title}`, detail: `${selected.source} · ${(selected.score * 100).toFixed(0)}% · Est. ${selected.downtimeHours}h` },
+    { id: "10", phase: "inventory", timestamp: "T+5.9s", level: "action", message: "SAP MM spares check", detail: `${inventory.length} BOM lines · ${inventory.filter((i) => i.status === "procure").length} PR draft(s)` },
+    { id: "11", phase: "inventory", timestamp: "T+6.4s", level: inventory.some((i) => i.status === "procure") ? "warn" : "success", message: inventory.some((i) => i.status === "procure") ? "Partial stock — PR draft created" : "Spares reserved for Safe Isolation kit" },
+    { id: "12", phase: "draft", timestamp: "T+7.1s", level: "action", message: "SAP PM work order composed", detail: `${meta.orderType} · LOTO op linked · ${meta.priority}` },
+    { id: "13", phase: "draft", timestamp: "T+7.8s", level: "success", message: "Maintenance execution package attached", detail: `${selected.title} · ISSoW flags propagated` },
     { id: "14", phase: "review", timestamp: "T+8.4s", level: "info", message: "Draft saved — RELEASE blocked", detail: "HITL-01 · Awaiting maintenance engineer authorization" },
-    { id: "15", phase: "review", timestamp: "T+8.6s", level: "success", message: "Reelin ID audit trail sealed", detail: "Export ready for compliance" },
+    { id: "15", phase: "review", timestamp: "T+8.6s", level: "success", message: "Reelin ID audit trail sealed", detail: "SEAM-compliant export ready" },
   ];
 }
 
@@ -226,6 +226,6 @@ export const MONITORING_LOG = (scanCount: number, assetCount: number): import(".
   phase: "monitoring",
   timestamp: "Live",
   level: "info",
-  message: `Facility-wide monitoring active — ${assetCount} assets`,
-  detail: `PI Historian scan cycle ${scanCount} · Cognite CDF · All tags within baseline`,
+  message: `POC armed — Safe Isolation & maintenance execution`,
+  detail: `Tags · P&IDs · PI · SAP linked · ${assetCount} assets · scan ${scanCount}`,
 });

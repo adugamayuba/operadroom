@@ -105,7 +105,7 @@ export const FACILITY = {
   name: "Rheinland Refinery Complex",
   code: "SH-RHN-01",
   region: "North Rhine-Westphalia, Germany",
-  integration: "SAP S/4HANA PM · IBM Maximo · Cognite Data Fusion",
+  integration: "Tag Master · P&ID · SAP S/4HANA PM · Cognite CDF · PI Historian",
 };
 
 const t = (
@@ -400,10 +400,10 @@ export function buildWorkOrder(asset: AssetScenario, severity: Severity, invento
     requiredStart: start.toISOString(),
     requiredEnd: end.toISOString(),
     operations: [
-      { op: 10, description: "Isolate per LOTO SH-LOTO-4412", duration: severity === "critical" ? 2 : 1 },
-      { op: 20, description: "Field inspection and condition verification", duration: 2 },
-      { op: 30, description: `Corrective work on ${asset.kind} per retrieved OEM / Shell standard`, duration: severity === "critical" ? 8 : 4 },
-      { op: 40, description: "Functional test and baseline re-record to PI", duration: 2 },
+      { op: 10, description: "Safe Isolation — LOTO per SH-LOTO-4412 / ISSoW gate", duration: severity === "critical" ? 2 : 1 },
+      { op: 20, description: "Field inspection and isolation verification", duration: 2 },
+      { op: 30, description: `Corrective maintenance execution on ${asset.kind} per standardized procedure`, duration: severity === "critical" ? 8 : 4 },
+      { op: 40, description: "Functional test · baseline re-record to PI", duration: 2 },
     ],
     spareParts: inventory.map((i) => ({
       material: i.material,
@@ -411,8 +411,9 @@ export function buildWorkOrder(asset: AssetScenario, severity: Severity, invento
       status: i.status === "procure" ? "PR draft created" : "Reserved in SAP MM",
     })),
     safetyNotes: [
-      "Hot work permit if flange breaking required",
+      "Safe Isolation (LOTO) mandatory before mechanical intervention",
       "ISSoW approval before confined space entry",
+      "Management of Change cross-check if operating envelope altered",
       "Agent logged to Reelin ID — no autonomous SAP release",
     ],
     reelinId: `rid:agent:operadroom:rhn-${Date.now().toString(36)}`,

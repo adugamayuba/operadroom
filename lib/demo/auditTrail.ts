@@ -82,14 +82,14 @@ export function loadAuditRecord(slugOrId: string): AuditRecord | null {
 }
 
 const PHASE_AUDIT: Partial<Record<SimPhase, { action: string; detail?: string; actor?: AuditActor }>> = {
-  detecting: { action: "Anomaly detected", detail: "Threshold breach correlated across PI Historian and Cognite CDF", actor: "operadroom" },
-  ingest: { action: "Alert normalized", detail: "Mapped to SAP equipment master · duplicate check passed", actor: "operadroom" },
-  records: { action: "Maintenance records retrieved", detail: "OEM manuals and prior work orders indexed", actor: "operadroom" },
-  diagnose: { action: "Root cause analysis completed", actor: "operadroom" },
-  analyze: { action: "Corrective procedures evaluated", detail: "Multi-criteria scoring: downtime, spares, safety, SLA", actor: "operadroom" },
-  select: { action: "Procedure selected", actor: "operadroom" },
-  inventory: { action: "SAP MM availability check", actor: "sap" },
-  draft: { action: "Work order draft composed", detail: "SAP PM DRAFT created · RELEASE blocked pending HITL-01", actor: "operadroom" },
+  detecting: { action: "Maintenance event triggered", detail: "POC process AM-05 · PI threshold on linked tag", actor: "operadroom" },
+  ingest: { action: "Tag master + P&ID resolved", detail: "Equipment master mapped · duplicate WO check passed", actor: "operadroom" },
+  records: { action: "ESSA aggregate complete", detail: "WO history, OEM manuals, and field notes fused", actor: "operadroom" },
+  diagnose: { action: "Root cause ranked", actor: "operadroom" },
+  analyze: { action: "Safe Isolation paths scored", detail: "Downtime, spares, ISSoW, SLA weighted", actor: "operadroom" },
+  select: { action: "Standardized procedure selected", actor: "operadroom" },
+  inventory: { action: "SAP MM spares check", actor: "sap" },
+  draft: { action: "Maintenance execution WO drafted", detail: "LOTO op linked · SAP PM DRAFT · RELEASE blocked HITL-01", actor: "operadroom" },
   review: { action: "Awaiting engineer release", detail: "Human authorization required before SAP RELEASE", actor: "system" },
 };
 

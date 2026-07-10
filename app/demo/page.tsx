@@ -10,6 +10,7 @@ import { trackEvent } from "@/lib/analytics";
 import { auditPagePath } from "@/lib/demo/auditTrail";
 import { emailWorkOrderToPlanning, exportWorkOrderPdf, PLANNING_RECIPIENTS } from "@/lib/demo/workOrderExport";
 import { ASSET_LIST, FACILITY, getSeverityMeta, type Severity, type SimPhase } from "@/lib/demo/scenarios";
+import { DATA_LAYER, ESSA_STEPS, POC_PROCESS } from "@/lib/demo/essa";
 import type { AssetHealthSummary, FixCandidate } from "@/lib/demo/liveSystem";
 import type { WorkOrderDraft } from "@/lib/demo/scenarios";
 
@@ -127,26 +128,69 @@ function EmailToast({
 }
 
 function IntegrationsBar() {
-  const systems = [
-    { name: "Cognite CDF", status: "Connected", detail: "Asset twin sync" },
-    { name: "PI Historian", status: "Streaming", detail: "1.2s cycle" },
-    { name: "SAP PM / MM", status: "Ready", detail: "HITL enforced" },
-    { name: "Reelin ID", status: "Active", detail: "Audit trail" },
-  ];
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 border border-[var(--demo-border)] bg-[var(--demo-surface)]">
-      {systems.map((s) => (
-        <div key={s.name} className="px-4 py-2.5 border-r border-[var(--demo-border-subtle)] last:border-r-0 flex items-center justify-between gap-2">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 border border-[var(--demo-border)] bg-[var(--demo-surface)]">
+      {DATA_LAYER.map((s) => (
+        <div key={s.name} className="px-3 py-2.5 border-r border-b border-[var(--demo-border-subtle)] lg:border-b-0 last:border-r-0 flex items-center justify-between gap-2">
           <div className="min-w-0">
-            <p className="text-[11px] font-medium truncate">{s.name}</p>
-            <p className="text-[10px] text-[var(--demo-muted)] truncate">{s.detail}</p>
+            <p className="text-[10px] font-medium truncate">{s.name}</p>
+            <p className="text-[9px] text-[var(--demo-muted)] truncate">{s.detail}</p>
           </div>
-          <span className="demo-field-ok demo-pill shrink-0 flex items-center gap-1">
+          <span className="demo-field-ok demo-pill shrink-0 flex items-center gap-1 text-[9px]">
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--demo-ok)] demo-live-pulse" />
             {s.status}
           </span>
         </div>
       ))}
+    </div>
+  );
+}
+
+function EssaFrameworkBar({ mode }: { mode: string }) {
+  return (
+    <div className="demo-panel p-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+        <div>
+          <p className="demo-label">ESSA + AI</p>
+          <p className="demo-heading mt-0.5">Eliminate · Simplify · Standardize · Aggregate · AI</p>
+        </div>
+        <span className="text-[10px] font-mono demo-pill demo-field-focus">{POC_PROCESS.code} · {POC_PROCESS.seam}</span>
+      </div>
+      <div className="grid grid-cols-5 gap-1">
+        {ESSA_STEPS.map((step, i) => {
+          const done = mode === "incident" && i < 4;
+          const active = mode === "incident" && i === 4;
+          return (
+            <div key={step.key} className="min-w-0">
+              <div className={`h-1 ${done ? "bg-[var(--demo-ok)]" : active ? "bg-[var(--demo-focus)]" : "bg-[var(--demo-border-subtle)]"}`} />
+              <p className={`mt-2 text-[10px] font-medium truncate ${active || done ? "text-[var(--demo-text)]" : "text-[var(--demo-muted)]"}`}>{step.label}</p>
+              <p className="text-[9px] text-[var(--demo-faint)] truncate hidden md:block">{step.detail}</p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ProcessFocusPanel() {
+  return (
+    <div className="grid sm:grid-cols-3 gap-3">
+      <div className="border border-[var(--demo-border)] px-4 py-3 bg-[var(--demo-surface-2)]">
+        <p className="demo-label">POC process</p>
+        <p className="text-[12px] font-medium mt-1">{POC_PROCESS.name}</p>
+        <p className="text-[10px] text-[var(--demo-muted)] mt-1">{POC_PROCESS.seam}</p>
+      </div>
+      <div className="border border-[var(--demo-border)] px-4 py-3 bg-[var(--demo-surface-2)]">
+        <p className="demo-label">Phase 0</p>
+        <p className="text-[12px] font-medium mt-1">Data layer connected</p>
+        <p className="text-[10px] text-[var(--demo-muted)] mt-1">Tags · P&IDs · SAP FL · historian</p>
+      </div>
+      <div className="border demo-field-ok px-4 py-3">
+        <p className="demo-label">Business outcome</p>
+        <p className="text-[12px] font-medium mt-1">3 engineers + agent</p>
+        <p className="text-[10px] text-[var(--demo-muted)] mt-1">vs 10-person maintenance desk baseline</p>
+      </div>
     </div>
   );
 }
@@ -167,14 +211,14 @@ function SystemStatusBar({
   incidentTag: string | null;
 }) {
   const labels: Record<string, string> = {
-    monitoring: "Monitoring",
-    incident: "Incident response",
+    monitoring: "Standby",
+    incident: "Executing",
     resolved: "Resolved",
   };
   const modeField =
     mode === "incident" ? "demo-field-warn" : mode === "resolved" ? "demo-field-ok" : "demo-field-focus";
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 border border-[var(--demo-border)] bg-[var(--demo-surface)]">
+    <div className="grid grid-cols-2 sm:grid-cols-5 border border-[var(--demo-border)] bg-[var(--demo-surface)]">
       {[
         { label: "System state", value: labels[mode] ?? mode, field: modeField },
         {
@@ -183,8 +227,13 @@ function SystemStatusBar({
           field: normalCount === totalAssets ? "demo-field-ok" : "demo-field-warn",
         },
         {
+          label: "Target process",
+          value: POC_PROCESS.code,
+          field: "demo-field-focus",
+        },
+        {
           label: "Pipeline",
-          value: phase === "monitoring" ? "Idle · watching all assets" : phase.replace("_", " "),
+          value: phase === "monitoring" ? "Idle · data layer linked" : phase.replace("_", " "),
           field: phase === "monitoring" ? "" : "demo-field-focus",
         },
         {
@@ -276,18 +325,18 @@ function FacilityMonitorGrid({ summaries }: { summaries: AssetHealthSummary[] })
 
 function PhaseTimeline({ phase }: { phase: SimPhase }) {
   const steps = [
-    { key: "detecting", label: "Detect" },
-    { key: "records", label: "Records" },
+    { key: "ingest", label: "Link tags" },
+    { key: "records", label: "Aggregate" },
     { key: "analyze", label: "Analyze" },
-    { key: "select", label: "Select fix" },
-    { key: "inventory", label: "Inventory" },
-    { key: "review", label: "Review" },
+    { key: "select", label: "Standardize" },
+    { key: "draft", label: "Execute" },
+    { key: "review", label: "Release" },
   ];
   const current = phaseIndex(phase);
 
   return (
     <div className="demo-panel p-4">
-      <p className="demo-label mb-3">Autonomous response pipeline</p>
+      <p className="demo-label mb-3">Maintenance execution pipeline · ESSA</p>
       <div className="flex gap-1">
         {steps.map((step) => {
           const idx = phaseIndex(step.key as SimPhase);
@@ -309,7 +358,7 @@ function FixAnalysisPanel({ fixes, visible, phase }: { fixes: FixCandidate[]; vi
   if (!visible || phaseIndex(phase) < phaseIndex("analyze")) return null;
   return (
     <div className="demo-panel p-4 demo-fade-in">
-      <p className="demo-label mb-3">Corrective procedure analysis</p>
+      <p className="demo-label mb-3">Safe Isolation procedure analysis</p>
       <div className="space-y-2">
         {fixes.map((f) => (
           <div
@@ -503,14 +552,17 @@ export default function DemoPage() {
       <main className="pt-14 pb-12">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 space-y-4">
           <div className="py-5 border-b border-[var(--demo-border-subtle)]">
-            <p className="demo-label">Rheinland POC · live operations sandbox</p>
-            <h1 className="mt-1 text-xl font-semibold">AI Agent on Standby</h1>
+            <p className="demo-label">Rheinland POC · maintenance execution sandbox</p>
+            <h1 className="mt-1 text-xl font-semibold">Maintenance Execution Agent · On Standby</h1>
             <p className="mt-2 text-[13px] text-[var(--demo-muted)] max-w-2xl">
-              All {sys.totalAssets} assets connected. Focus equipment in the 3D twin or sidebar, inject an anomaly, and watch the agent search records, draft the work order, and route to engineer release.
+              Phase 0 data layer linked (tags, P&IDs, SAP, historian). Agent armed for{" "}
+              <span className="text-[var(--demo-text)]">{POC_PROCESS.name}</span>. Inject an event to run ESSA → AI: aggregate records, standardize the fix, draft the work order, engineer release.
             </p>
           </div>
 
+          <ProcessFocusPanel />
           <IntegrationsBar />
+          <EssaFrameworkBar mode={sys.mode} />
           <SystemStatusBar
             mode={sys.mode}
             phase={sys.phase}
@@ -544,7 +596,7 @@ export default function DemoPage() {
               </div>
               <div className="flex flex-wrap gap-2">
                 <button type="button" disabled={!sys.canTrigger} onClick={handleTrigger} className="demo-btn-primary">
-                  {sys.mode === "incident" ? "Response in progress…" : "Inject anomaly"}
+                  {sys.mode === "incident" ? "Response in progress…" : "Inject maintenance event"}
                 </button>
                 <button type="button" onClick={sys.resetMonitoring} className="demo-btn-secondary">
                   Return to monitoring
@@ -655,7 +707,7 @@ export default function DemoPage() {
                   <p className="demo-heading mt-0.5">Operadroom</p>
                 </div>
                 <span className="text-[11px] text-[var(--demo-muted)]">
-                  {sys.mode === "monitoring" ? "Watching all assets" : "Executing"}
+                  {sys.mode === "monitoring" ? "POC armed · standby" : "ESSA → AI executing"}
                 </span>
               </div>
               <div className="flex-1 p-4 space-y-2 overflow-y-auto demo-scroll">
@@ -787,7 +839,7 @@ export default function DemoPage() {
                   />
                 )}
                 {phaseIndex(sys.phase) < phaseIndex("inventory") && sys.mode === "monitoring" && (
-                  <p className="text-[12px] text-[var(--demo-muted)]">Standing by — all assets within baseline…</p>
+                  <p className="text-[12px] text-[var(--demo-muted)]">Standby — {POC_PROCESS.code} · data layer linked · inject event to run pipeline</p>
                 )}
               </div>
             </div>
