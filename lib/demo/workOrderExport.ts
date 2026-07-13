@@ -1,4 +1,11 @@
 import { FACILITY, type WorkOrderDraft } from "./scenarios";
+import {
+  COORDINATION_BASELINE,
+  downtimeExposureRange,
+  formatEur,
+  laborSavingsEur,
+  personHoursSaved,
+} from "./pilotEconomics";
 
 export const PLANNING_RECIPIENTS = [
   "maintenance.planning@rheinland.shell.com",
@@ -18,7 +25,7 @@ function formatTs(iso: string): string {
 
 function buildWorkOrderDocumentHtml(
   workOrder: WorkOrderDraft,
-  opts: { sapNumber: string; engineerNotes?: string; reelinId?: string }
+  opts: { sapNumber: string; engineerNotes?: string; reelinId?: string; elapsedMs?: number }
 ): string {
   const notesBlock = opts.engineerNotes
     ? `<section><h2>Engineer notes</h2><p>${opts.engineerNotes.replace(/\n/g, "<br/>")}</p></section>`
@@ -31,6 +38,16 @@ function buildWorkOrderDocumentHtml(
   const parts = workOrder.spareParts
     .map((p) => `<tr><td>${p.material}</td><td>${p.qty}</td><td>${p.status}</td></tr>`)
     .join("");
+
+  const downtime = downtimeExposureRange();
+  const laborSaved = laborSavingsEur();
+  const hoursSaved = personHoursSaved();
+  const operadroomWall =
+    opts.elapsedMs != null
+      ? opts.elapsedMs < 60_000
+        ? `${Math.round(opts.elapsedMs / 1000)}s (demo)`
+        : `${Math.round(opts.elapsedMs / 60_000)} min (demo)`
+      : `< ${COORDINATION_BASELINE.operadroomTargetMinutes} min (pilot target)`;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -85,6 +102,19 @@ function buildWorkOrderDocumentHtml(
     <ul>${workOrder.safetyNotes.map((n) => `<li>${n}</li>`).join("")}</ul>
   </section>
 
+  <section>
+    <h2>OPEX impact (illustrative · pilot baseline)</h2>
+    <table>
+      <tbody>
+        <tr><td><strong>Traditional coordination</strong></td><td>${COORDINATION_BASELINE.traditionalRoles} · ${COORDINATION_BASELINE.traditionalWallClock} · ~${COORDINATION_BASELINE.traditionalPersonHours} person-hours</td></tr>
+        <tr><td><strong>Operadroom (this event)</strong></td><td>${COORDINATION_BASELINE.operadroomRoles} · ${operadroomWall} · ~${COORDINATION_BASELINE.operadroomPersonHours} person-hours</td></tr>
+        <tr><td><strong>Coordination hours saved</strong></td><td>${hoursSaved} person-hours · est. labor ${formatEur(laborSaved)} / event</td></tr>
+        <tr><td><strong>Downtime exposure avoided (${COORDINATION_BASELINE.downtimeAvoidanceHours}h)</strong></td><td>${downtime.low} – ${downtime.high} (throughput-critical asset range)</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:10px;color:#8b939e;margin-top:8px;">Baseline to be validated Week 1 with Rheinland maintenance execution owner.</p>
+  </section>
+
   <div class="footer">
     ${opts.reelinId ? `Reelin ID · ${opts.reelinId}<br/>` : ""}
     DRAFT/RELEASE simulation — Operadroom pilot sandbox
@@ -95,7 +125,7 @@ function buildWorkOrderDocumentHtml(
 
 export function exportWorkOrderPdf(
   workOrder: WorkOrderDraft,
-  opts: { sapNumber: string; engineerNotes?: string; reelinId?: string }
+  opts: { sapNumber: string; engineerNotes?: string; reelinId?: string; elapsedMs?: number }
 ): void {
   const html = buildWorkOrderDocumentHtml(workOrder, opts);
   const win = window.open("", "_blank", "noopener,noreferrer");
@@ -108,7 +138,7 @@ export function exportWorkOrderPdf(
 
 export function downloadWorkOrderHtml(
   workOrder: WorkOrderDraft,
-  opts: { sapNumber: string; engineerNotes?: string; reelinId?: string }
+  opts: { sapNumber: string; engineerNotes?: string; reelinId?: string; elapsedMs?: number }
 ): void {
   const html = buildWorkOrderDocumentHtml(workOrder, opts);
   const blob = new Blob([html], { type: "text/html;charset=utf-8" });
@@ -122,7 +152,7 @@ export function downloadWorkOrderHtml(
 
 export async function emailWorkOrderToPlanning(
   workOrder: WorkOrderDraft,
-  opts: { sapNumber: string; engineerNotes?: string; reelinId?: string }
+  opts: { sapNumber: string; engineerNotes?: string; reelinId?: string; elapsedMs?: number }
 ): Promise<{ sentAt: string; recipients: string[]; messageId: string }> {
   await new Promise((r) => setTimeout(r, 1400));
   return {

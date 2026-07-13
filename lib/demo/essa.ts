@@ -5,7 +5,7 @@ export const POC_PROCESS = {
   name: "Safe Isolation & Maintenance Execution",
   seam: "SEAM · Asset Management",
   outcome:
-    "Target: 3 engineers + agent cover the same execution load as a 10-person desk (POC metric)",
+    "Target: 1 engineer + agent vs 10–15 coordinating roles per critical event (POC metric)",
 };
 
 export const ESSA_STEPS = [

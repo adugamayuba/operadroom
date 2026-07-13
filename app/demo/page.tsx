@@ -11,6 +11,15 @@ import { auditPagePath } from "@/lib/demo/auditTrail";
 import { emailWorkOrderToPlanning, exportWorkOrderPdf, PLANNING_RECIPIENTS } from "@/lib/demo/workOrderExport";
 import { ASSET_LIST, FACILITY, getSeverityMeta, type Severity, type SimPhase } from "@/lib/demo/scenarios";
 import { DATA_LAYER, ESSA_STEPS, POC_PROCESS } from "@/lib/demo/essa";
+import {
+  COORDINATION_BASELINE,
+  downtimeExposureRange,
+  formatElapsedMs,
+  formatEur,
+  laborSavingsEur,
+  personHoursSaved,
+  PILOT_CONTEXT,
+} from "@/lib/demo/pilotEconomics";
 import type { AssetHealthSummary, FixCandidate } from "@/lib/demo/liveSystem";
 import type { WorkOrderDraft } from "@/lib/demo/scenarios";
 
@@ -58,6 +67,7 @@ function WorkOrderDispatchPanel({
   approved,
   onEmail,
   emailing,
+  elapsedMs,
 }: {
   workOrder: WorkOrderDraft;
   sapNumber: string;
@@ -65,6 +75,7 @@ function WorkOrderDispatchPanel({
   approved: boolean;
   onEmail: () => void;
   emailing: boolean;
+  elapsedMs: number;
 }) {
   const exportPdf = () => {
     trackEvent("demo_export_wo_pdf", { sapNumber, approved });
@@ -72,6 +83,7 @@ function WorkOrderDispatchPanel({
       sapNumber,
       engineerNotes,
       reelinId: workOrder.reelinId,
+      elapsedMs,
     });
   };
 
@@ -146,7 +158,24 @@ function IntegrationsBar() {
   );
 }
 
-function EssaFrameworkBar({ mode }: { mode: string }) {
+function EssaFrameworkBar({ phase, approved }: { phase: SimPhase; approved: boolean }) {
+  const ESSA_GATES: SimPhase[] = ["telemetry", "records", "analyze", "inventory", "draft"];
+
+  const stepStatus = (i: number): "idle" | "active" | "done" => {
+    if (phase === "monitoring") return "idle";
+    if (i === 4) {
+      if (approved) return "done";
+      if (phaseIndex(phase) >= phaseIndex("draft")) return "active";
+      return "idle";
+    }
+    const gate = phaseIndex(ESSA_GATES[i]);
+    const nextGate = phaseIndex(ESSA_GATES[i + 1] ?? "approved");
+    const current = phaseIndex(phase);
+    if (current >= nextGate) return "done";
+    if (current >= gate) return "active";
+    return "idle";
+  };
+
   return (
     <div className="demo-panel p-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
@@ -158,12 +187,11 @@ function EssaFrameworkBar({ mode }: { mode: string }) {
       </div>
       <div className="grid grid-cols-5 gap-1">
         {ESSA_STEPS.map((step, i) => {
-          const done = mode === "incident" && i < 4;
-          const active = mode === "incident" && i === 4;
+          const status = stepStatus(i);
           return (
             <div key={step.key} className="min-w-0">
-              <div className={`h-1 ${done ? "bg-[var(--demo-ok)]" : active ? "bg-[var(--demo-focus)]" : "bg-[var(--demo-border-subtle)]"}`} />
-              <p className={`mt-2 text-[10px] font-medium truncate ${active || done ? "text-[var(--demo-text)]" : "text-[var(--demo-muted)]"}`}>{step.label}</p>
+              <div className={`h-1 ${status === "done" ? "bg-[var(--demo-ok)]" : status === "active" ? "bg-[var(--demo-focus)]" : "bg-[var(--demo-border-subtle)]"}`} />
+              <p className={`mt-2 text-[10px] font-medium truncate ${status !== "idle" ? "text-[var(--demo-text)]" : "text-[var(--demo-muted)]"}`}>{step.label}</p>
               <p className="text-[9px] text-[var(--demo-faint)] truncate hidden md:block">{step.detail}</p>
             </div>
           );
@@ -175,22 +203,86 @@ function EssaFrameworkBar({ mode }: { mode: string }) {
 
 function ProcessFocusPanel() {
   return (
-    <div className="grid sm:grid-cols-3 gap-3">
+    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
       <div className="border border-[var(--demo-border)] px-4 py-3 bg-[var(--demo-surface-2)]">
-        <p className="demo-label">POC process</p>
-        <p className="text-[12px] font-medium mt-1">{POC_PROCESS.name}</p>
-        <p className="text-[10px] text-[var(--demo-muted)] mt-1">{POC_PROCESS.seam}</p>
+        <p className="demo-label">Pilot scenario</p>
+        <p className="text-[12px] font-medium mt-1">{PILOT_CONTEXT.scenario}</p>
+        <p className="text-[10px] text-[var(--demo-muted)] mt-1">{PILOT_CONTEXT.facility}</p>
       </div>
       <div className="border border-[var(--demo-border)] px-4 py-3 bg-[var(--demo-surface-2)]">
-        <p className="demo-label">Phase 0</p>
-        <p className="text-[12px] font-medium mt-1">Data layer connected</p>
-        <p className="text-[10px] text-[var(--demo-muted)] mt-1">Tags · P&IDs · SAP FL · historian</p>
+        <p className="demo-label">POC unit · process</p>
+        <p className="text-[12px] font-medium mt-1">{PILOT_CONTEXT.unit}</p>
+        <p className="text-[10px] text-[var(--demo-muted)] mt-1">{POC_PROCESS.code} · {POC_PROCESS.name}</p>
+      </div>
+      <div className="border border-[var(--demo-border)] px-4 py-3 bg-[var(--demo-surface-2)]">
+        <p className="demo-label">Lead asset</p>
+        <p className="text-[12px] font-medium mt-1 font-mono">{PILOT_CONTEXT.leadAsset.split(" · ")[0]}</p>
+        <p className="text-[10px] text-[var(--demo-muted)] mt-1">{PILOT_CONTEXT.leadAsset.split(" · ")[1]}</p>
       </div>
       <div className="border demo-field-ok px-4 py-3">
-        <p className="demo-label">Business outcome</p>
-        <p className="text-[12px] font-medium mt-1">3 engineers + agent</p>
-        <p className="text-[10px] text-[var(--demo-muted)] mt-1">vs 10-person maintenance desk baseline</p>
+        <p className="demo-label">Coordination target</p>
+        <p className="text-[12px] font-medium mt-1">{COORDINATION_BASELINE.operadroomRoles}</p>
+        <p className="text-[10px] text-[var(--demo-muted)] mt-1">vs {COORDINATION_BASELINE.traditionalRoles} · {COORDINATION_BASELINE.traditionalWallClock}</p>
       </div>
+    </div>
+  );
+}
+
+function CoordinationImpactPanel({
+  mode,
+  phase,
+  approved,
+  elapsedMs,
+}: {
+  mode: string;
+  phase: SimPhase;
+  approved: boolean;
+  elapsedMs: number;
+}) {
+  if (mode === "monitoring" || phaseIndex(phase) < phaseIndex("draft")) return null;
+
+  const hoursSaved = personHoursSaved();
+  const laborSaved = laborSavingsEur();
+  const downtime = downtimeExposureRange();
+  const operadroomTime = formatElapsedMs(elapsedMs);
+
+  return (
+    <div className={`border p-4 ${approved ? "demo-field-ok" : "border-[var(--demo-border)] bg-[var(--demo-surface-2)]"}`}>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div>
+          <p className="demo-label">OPEX · coordination impact</p>
+          <p className="text-[13px] font-medium mt-1">
+            {approved ? `Coordination hours saved: ${hoursSaved}` : "Projected coordination savings (on release)"}
+          </p>
+          <p className="text-[11px] text-[var(--demo-muted)] mt-1">
+            Traditional · {COORDINATION_BASELINE.traditionalRoles} · {COORDINATION_BASELINE.traditionalWallClock} · ~{COORDINATION_BASELINE.traditionalPersonHours} person-hours
+          </p>
+          <p className="text-[11px] text-[var(--demo-muted)]">
+            Operadroom · {COORDINATION_BASELINE.operadroomRoles} · {operadroomTime} · ~{COORDINATION_BASELINE.operadroomPersonHours} person-hours
+          </p>
+        </div>
+        {approved && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 shrink-0">
+            <div className="border border-[var(--demo-border-subtle)] px-3 py-2 bg-[var(--demo-surface)]">
+              <p className="demo-label">Labor / event</p>
+              <p className="text-[12px] font-mono font-medium mt-1">{formatEur(laborSaved)}</p>
+            </div>
+            <div className="border border-[var(--demo-border-subtle)] px-3 py-2 bg-[var(--demo-surface)]">
+              <p className="demo-label">Hours saved</p>
+              <p className="text-[12px] font-mono font-medium mt-1">{hoursSaved} p-h</p>
+            </div>
+            <div className="border border-[var(--demo-border-subtle)] px-3 py-2 bg-[var(--demo-surface)] col-span-2 sm:col-span-1">
+              <p className="demo-label">Downtime ({COORDINATION_BASELINE.downtimeAvoidanceHours}h)</p>
+              <p className="text-[11px] font-mono font-medium mt-1">{downtime.low} – {downtime.high}</p>
+            </div>
+          </div>
+        )}
+      </div>
+      {approved && (
+        <p className="text-[10px] text-[var(--demo-faint)] mt-3 border-t border-[var(--demo-border-subtle)] pt-3">
+          Illustrative pilot baseline · validate with Rheinland maintenance execution owner in Week 1
+        </p>
+      )}
     </div>
   );
 }
@@ -502,6 +594,7 @@ export default function DemoPage() {
         sapNumber,
         engineerNotes: sys.engineerNotes || releaseNotes,
         reelinId: sys.workOrder.reelinId,
+        elapsedMs: sys.elapsed,
       });
       setEmailToast({ visible: true, messageId: result.messageId });
     } finally {
@@ -552,17 +645,18 @@ export default function DemoPage() {
       <main className="pt-14 pb-12">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 space-y-4">
           <div className="py-5 border-b border-[var(--demo-border-subtle)]">
-            <p className="demo-label">Rheinland POC · maintenance execution sandbox</p>
+            <p className="demo-label">Rheinland POC · {PILOT_CONTEXT.unit} · {PILOT_CONTEXT.scenario}</p>
             <h1 className="mt-1 text-xl font-semibold">Maintenance Execution Agent · On Standby</h1>
-            <p className="mt-2 text-[13px] text-[var(--demo-muted)] max-w-2xl">
+            <p className="mt-2 text-[13px] text-[var(--demo-muted)] max-w-3xl">
               Phase 0 data layer linked (tags, P&IDs, SAP, historian). Agent armed for{" "}
-              <span className="text-[var(--demo-text)]">{POC_PROCESS.name}</span>. Inject an event to run ESSA → AI: aggregate records, standardize the fix, draft the work order, engineer release.
+              <span className="text-[var(--demo-text)]">{POC_PROCESS.name}</span> on{" "}
+              <span className="font-mono text-[var(--demo-text)]">P-2047</span>. Inject a critical event to run ESSA → AI: eliminate coordination noise, aggregate records, draft the SAP work order — one engineer releases.
             </p>
           </div>
 
           <ProcessFocusPanel />
           <IntegrationsBar />
-          <EssaFrameworkBar mode={sys.mode} />
+          <EssaFrameworkBar phase={sys.phase} approved={sys.approved} />
           <SystemStatusBar
             mode={sys.mode}
             phase={sys.phase}
@@ -655,13 +749,16 @@ export default function DemoPage() {
 
           {sys.mode !== "monitoring" && <PhaseTimeline phase={sys.phase} />}
 
+          <CoordinationImpactPanel mode={sys.mode} phase={sys.phase} approved={sys.approved} elapsedMs={sys.elapsed} />
+
           {sys.mode === "incident" && sys.elapsed > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 border border-[var(--demo-border)]">
+            <div className="grid grid-cols-2 sm:grid-cols-5 border border-[var(--demo-border)]">
               {[
                 { label: "Alert", value: meta.alertCode },
                 { label: "Priority", value: meta.priority.split(" — ")[0] },
                 { label: "Window", value: meta.responseWindow },
-                { label: "Elapsed", value: `${(sys.elapsed / 1000).toFixed(1)} s` },
+                { label: "Elapsed", value: formatElapsedMs(sys.elapsed) },
+                { label: "Baseline", value: COORDINATION_BASELINE.traditionalWallClock },
               ].map((m) => (
                 <div key={m.label} className="px-4 py-3 border-r border-[var(--demo-border-subtle)] last:border-r-0">
                   <p className="demo-label">{m.label}</p>
@@ -835,6 +932,7 @@ export default function DemoPage() {
                     engineerNotes={sys.engineerNotes || undefined}
                     approved={sys.approved}
                     emailing={emailing}
+                    elapsedMs={sys.elapsed}
                     onEmail={() => sendWorkOrderEmail(false)}
                   />
                 )}
