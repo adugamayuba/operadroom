@@ -1,4 +1,4 @@
-/** Rheinland pilot tenant configuration (Dominik unit) */
+/** Rheinland pilot tenant configuration */
 
 export const PILOT_TENANT = {
   id: "rheinland-cdu1",
@@ -10,7 +10,6 @@ export const PILOT_TENANT = {
   leadAsset: "P-2047",
   assetCount: 15,
   durationDays: 90,
-  sponsor: "Dominik Wagner",
   scenario: "Pre-TA · OPEX containment",
 } as const;
 
