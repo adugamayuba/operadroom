@@ -18,5 +18,5 @@ export type PilotRole = "engineer" | "observer";
 
 export const PILOT_ROLES: { id: PilotRole; label: string; canRelease: boolean }[] = [
   { id: "engineer", label: "Maintenance execution engineer", canRelease: true },
-  { id: "observer", label: "Observer (Dominik)", canRelease: false },
+  { id: "observer", label: "Observer", canRelease: false },
 ];
