@@ -26,15 +26,24 @@ export type AssetKind =
 
 export type AssetId =
   | "p2047"
+  | "p2048"
+  | "p2049"
+  | "p2050"
+  | "p2051"
   | "p1012"
   | "c3011"
   | "e1156"
+  | "e1157"
+  | "e1158"
   | "v4820"
+  | "v4821"
+  | "v4822"
   | "t1105"
   | "pl302"
   | "col801"
   | "f2201"
-  | "xv3044";
+  | "xv3044"
+  | "ag1101";
 
 export interface TelemetryReading {
   label: string;
@@ -274,6 +283,141 @@ export const ASSETS: Record<AssetId, AssetScenario> = {
       t("Stroke Time", "s", 2.8, "above", { advisory: 3.5, warning: 4.5, critical: 6.0 }, { advisory: 3.7, warning: 4.8, critical: 6.2 }),
       t("Solenoid Health", "score", 0.95, "below", { advisory: 0.88, warning: 0.82, critical: 0.75 }, { advisory: 0.86, warning: 0.80, critical: 0.72 }),
       t("Partial Stroke Test", "status", 1, "below", { advisory: 0.9, warning: 0.8, critical: 0.7 }, { advisory: 0.88, warning: 0.78, critical: 0.68 }),
+    ],
+  },
+  p2048: {
+    id: "p2048",
+    tag: "P-2048",
+    name: "Desalter Charge Pump",
+    kind: "pump",
+    unit: "CDU-1 · Desalting",
+    functionalLocation: "RHN-CDU1-P2048",
+    twinSource: "Cognite · PI Historian",
+    facilityPosition: { x: -6, z: 1 },
+    telemetry: [
+      t("Vibration (DE)", "mm/s RMS", 1.9, "above", { advisory: 3.8, warning: 6.0, critical: 8.5 }, { advisory: 4.0, warning: 6.3, critical: 8.9 }),
+      t("Seal Leakage", "ppm", 120, "above", { advisory: 200, warning: 350, critical: 500 }, { advisory: 210, warning: 360, critical: 520 }),
+      t("Flow Rate", "m³/h", 410, "below", { advisory: 390, warning: 370, critical: 340 }, { advisory: 385, warning: 365, critical: 335 }),
+    ],
+  },
+  p2049: {
+    id: "p2049",
+    tag: "P-2049",
+    name: "Atmospheric Reflux Pump",
+    kind: "pump",
+    unit: "CDU-1 · Primary Fractionation",
+    functionalLocation: "RHN-CDU1-P2049",
+    twinSource: "Honeywell Forge · PI",
+    facilityPosition: { x: -3, z: -3 },
+    telemetry: [
+      t("Vibration (NDE)", "mm/s RMS", 2.0, "above", { advisory: 4.0, warning: 6.2, critical: 8.8 }, { advisory: 4.3, warning: 6.5, critical: 9.1 }),
+      t("NPSH Margin", "m", 3.2, "below", { advisory: 2.8, warning: 2.2, critical: 1.6 }, { advisory: 2.6, warning: 2.0, critical: 1.4 }),
+      t("Motor Temp", "°C", 72, "above", { advisory: 82, warning: 92, critical: 105 }, { advisory: 84, warning: 94, critical: 108 }),
+    ],
+  },
+  p2050: {
+    id: "p2050",
+    tag: "P-2050",
+    name: "Kerosene Side-Draw Pump",
+    kind: "pump",
+    unit: "CDU-1 · Product Recovery",
+    functionalLocation: "RHN-CDU1-P2050",
+    twinSource: "Aspen Mtell · PI",
+    facilityPosition: { x: -1, z: -2.5 },
+    telemetry: [
+      t("Vibration (DE)", "mm/s RMS", 1.7, "above", { advisory: 3.6, warning: 5.8, critical: 8.0 }, { advisory: 3.9, warning: 6.1, critical: 8.3 }),
+      t("Discharge Pressure", "bar", 12.1, "below", { advisory: 11.2, warning: 10.4, critical: 9.5 }, { advisory: 11.0, warning: 10.2, critical: 9.2 }),
+      t("Bearing Temp", "°C", 65, "above", { advisory: 78, warning: 88, critical: 100 }, { advisory: 80, warning: 90, critical: 102 }),
+    ],
+  },
+  p2051: {
+    id: "p2051",
+    tag: "P-2051",
+    name: "Stripper Reboiler Circulation Pump",
+    kind: "pump",
+    unit: "CDU-1 · Stripping Section",
+    functionalLocation: "RHN-CDU1-P2051",
+    twinSource: "Cognite · SAP PdM",
+    facilityPosition: { x: -5.5, z: -1.5 },
+    telemetry: [
+      t("Vibration (DE)", "mm/s RMS", 2.3, "above", { advisory: 4.2, warning: 6.5, critical: 9.0 }, { advisory: 4.5, warning: 6.8, critical: 9.3 }),
+      t("Seal Chamber Temp", "°C", 58, "above", { advisory: 72, warning: 85, critical: 98 }, { advisory: 74, warning: 87, critical: 100 }),
+      t("Current Draw", "A", 98, "above", { advisory: 112, warning: 128, critical: 145 }, { advisory: 115, warning: 131, critical: 148 }),
+    ],
+  },
+  e1157: {
+    id: "e1157",
+    tag: "E-1157",
+    name: "Desalter Effluent Cooler",
+    kind: "exchanger",
+    unit: "CDU-1 · Desalting",
+    functionalLocation: "RHN-CDU1-E1157",
+    twinSource: "TEMA · PI Historian",
+    facilityPosition: { x: -6.5, z: 2.5 },
+    telemetry: [
+      t("Outlet Temp", "°C", 88, "above", { advisory: 98, warning: 108, critical: 118 }, { advisory: 100, warning: 110, critical: 120 }),
+      t("Tube Side ΔP", "bar", 0.28, "above", { advisory: 0.42, warning: 0.55, critical: 0.68 }, { advisory: 0.44, warning: 0.57, critical: 0.70 }),
+      t("Fouling Factor", "m²·K/W", 0.00038, "above", { advisory: 0.00058, warning: 0.00078, critical: 0.0010 }, { advisory: 0.00060, warning: 0.00080, critical: 0.00102 }),
+    ],
+  },
+  e1158: {
+    id: "e1158",
+    tag: "E-1158",
+    name: "Crude/Product Trim Exchanger",
+    kind: "exchanger",
+    unit: "CDU-1 · Heat Recovery",
+    functionalLocation: "RHN-CDU1-E1158",
+    twinSource: "Honeywell Forge · Cognite",
+    facilityPosition: { x: -2.5, z: 2 },
+    telemetry: [
+      t("Approach Temp", "°C", 18, "above", { advisory: 24, warning: 30, critical: 36 }, { advisory: 25, warning: 31, critical: 37 }),
+      t("Shell Side ΔP", "bar", 0.22, "above", { advisory: 0.35, warning: 0.48, critical: 0.62 }, { advisory: 0.36, warning: 0.50, critical: 0.64 }),
+      t("Leak Detection", "ppm", 0, "above", { advisory: 5, warning: 12, critical: 25 }, { advisory: 6, warning: 14, critical: 28 }),
+    ],
+  },
+  v4821: {
+    id: "v4821",
+    tag: "V-4821",
+    name: "Furnace Fuel Gas Control Valve",
+    kind: "valve",
+    unit: "CDU-1 · Fired Equipment",
+    functionalLocation: "RHN-CDU1-V4821",
+    twinSource: "SAP PM · PI",
+    facilityPosition: { x: -7.5, z: -3.5 },
+    telemetry: [
+      t("Valve Position", "%", 58, "above", { advisory: 75, warning: 85, critical: 92 }, { advisory: 77, warning: 87, critical: 94 }),
+      t("Actuator Pressure", "bar", 5.4, "below", { advisory: 4.8, warning: 4.2, critical: 3.5 }, { advisory: 4.6, warning: 4.0, critical: 3.3 }),
+      t("Fuel Flow Deviation", "%", 0, "above", { advisory: 6, warning: 12, critical: 18 }, { advisory: 7, warning: 13, critical: 20 }),
+    ],
+  },
+  v4822: {
+    id: "v4822",
+    tag: "V-4822",
+    name: "Column Overhead PCV",
+    kind: "valve",
+    unit: "CDU-1 · Distillation Control",
+    functionalLocation: "RHN-CDU1-V4822",
+    twinSource: "Cognite · SAP PM",
+    facilityPosition: { x: -3.5, z: -3.5 },
+    telemetry: [
+      t("Valve Position", "%", 44, "above", { advisory: 68, warning: 82, critical: 90 }, { advisory: 70, warning: 84, critical: 92 }),
+      t("Process Pressure", "bar", 1.38, "above", { advisory: 1.52, warning: 1.65, critical: 1.78 }, { advisory: 1.54, warning: 1.67, critical: 1.80 }),
+      t("Positioner Deviation", "%", 0, "above", { advisory: 5, warning: 10, critical: 15 }, { advisory: 6, warning: 11, critical: 16 }),
+    ],
+  },
+  ag1101: {
+    id: "ag1101",
+    tag: "A-1101",
+    name: "Crude Feed Online Analyzer",
+    kind: "valve",
+    unit: "CDU-1 · Quality Monitoring",
+    functionalLocation: "RHN-CDU1-A1101",
+    twinSource: "PI Historian · LIMS",
+    facilityPosition: { x: -4, z: 3.5 },
+    telemetry: [
+      t("Sulfur Deviation", "ppm", 0, "above", { advisory: 8, warning: 15, critical: 22 }, { advisory: 9, warning: 16, critical: 24 }),
+      t("Sample Flow", "L/h", 4.2, "below", { advisory: 3.8, warning: 3.2, critical: 2.6 }, { advisory: 3.6, warning: 3.0, critical: 2.4 }),
+      t("Analyzer Health", "score", 0.92, "below", { advisory: 0.85, warning: 0.78, critical: 0.70 }, { advisory: 0.83, warning: 0.76, critical: 0.68 }),
     ],
   },
 };

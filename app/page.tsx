@@ -6,9 +6,8 @@ import { trackEvent } from "@/lib/analytics";
 const NAV = [
   { label: "Platform", href: "#platform" },
   { label: "Demo", href: "/demo" },
-  { label: "Use Cases", href: "#use-cases" },
+  { label: "Pilot", href: "/pilot" },
   { label: "Security", href: "#security" },
-  { label: "Pilot", href: "#pilot" },
 ];
 
 const CONTACT_EMAIL = "hi@reelin.ai";
