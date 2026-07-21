@@ -5,6 +5,7 @@ import { trackEvent } from "@/lib/analytics";
 
 const NAV = [
   { label: "Platform", href: "#platform" },
+  { label: "Vault", href: "/vault" },
   { label: "Demo", href: "/demo" },
   { label: "Pilot", href: "/pilot" },
   { label: "Security", href: "#security" },
