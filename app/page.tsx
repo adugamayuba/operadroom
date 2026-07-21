@@ -5,10 +5,9 @@ import { trackEvent } from "@/lib/analytics";
 
 const NAV = [
   { label: "Platform", href: "#platform" },
-  { label: "Vault", href: "/vault" },
-  { label: "Demo", href: "/demo" },
-  { label: "Pilot", href: "/pilot" },
+  { label: "Plant Memory", href: "#memory" },
   { label: "Security", href: "#security" },
+  { label: "Pilot", href: "#pilot" },
 ];
 
 const CONTACT_EMAIL = "hi@reelin.ai";
@@ -236,12 +235,12 @@ function HeroSection() {
           A Reelin AI Product
         </p>
         <h1 className="text-[clamp(1.75rem,8vw,4.25rem)] font-bold leading-[1.08] sm:leading-[1.05] tracking-tight max-w-3xl uppercase animate-fade-up-delay">
-          From Predictive Alert to Completed Work Order
+          Turn Decades of Plant Records Into an Agentic Brain
         </h1>
         <p className="mt-4 sm:mt-6 text-[14px] sm:text-[15px] md:text-[17px] text-white/65 max-w-xl leading-relaxed animate-fade-up-delay-2">
-          Operadroom is the autonomous execution layer for industrial digital twins. When IoT
-          flags a failure, our agents diagnose, cross-reference manuals, and draft maintenance
-          workflows across your ERP — in seconds, not days.
+          Chemical plants, refineries, and upstream assets sit on centuries of paper archives, scattered PDFs, and
+          trapped institutional knowledge. Operadroom digitizes legacy records, indexes them with AI, and deploys agents
+          that search, reason, and execute — every action sealed on-chain via Reelin ID.
         </p>
         <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row gap-3 sm:gap-4 animate-fade-up-delay-2">
           <GhostButton href="#pilot" eventName="cta_click" eventProps={{ action: "request_pilot", location: "hero" }}>
@@ -295,9 +294,10 @@ function SplitSection({
 
 function FlowDiagram() {
   const steps = [
-    { n: "01", title: "Ingest", desc: "Real-time telemetry from digital twin & IoT streams" },
-    { n: "02", title: "Diagnose", desc: "Parse manuals, history, and incident logs for root cause" },
-    { n: "03", title: "Execute", desc: "Draft spec'd work orders across SAP, Maximo, and CMMS" },
+    { n: "01", title: "Digitize", desc: "Low-cost scan of legacy archive rooms — paper, microfilm, and hard-drive PDFs" },
+    { n: "02", title: "Index", desc: "AI agent OCRs, catalogs, tags equipment IDs, and builds a knowledge graph" },
+    { n: "03", title: "Query", desc: "Engineers ask plain-English questions — answers cite the exact source page" },
+    { n: "04", title: "Act", desc: "Agents draft Safe Isolation, resolve anomalies, and release work orders — HITL always" },
   ];
 
   return (
@@ -325,13 +325,16 @@ function ArchitectureVisual() {
       <div className="absolute inset-0 bg-black/60 z-[1]" />
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:32px_32px] z-[2]" />
       <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-8 gap-3 sm:gap-4 text-[10px] sm:text-[11px] tracking-wider uppercase">
-        <div className="border border-white/15 px-4 py-3 text-white/70 bg-black/40">Digital Twin / IoT</div>
+        <div className="border border-white/30 px-4 py-3 bg-white/[0.08] font-semibold">Plant Memory · AI Agent</div>
         <div className="text-center text-white/30">↓</div>
-        <div className="border border-white/30 px-4 py-3 bg-white/[0.08] font-semibold">Operadroom Agent</div>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="border border-white/15 px-3 py-2 text-white/50 bg-black/30">Legacy Archive</div>
+          <div className="border border-white/15 px-3 py-2 text-white/50 bg-black/30">Knowledge Graph</div>
+        </div>
         <div className="text-center text-white/30">↓</div>
         <div className="grid grid-cols-2 gap-2">
           <div className="border border-white/15 px-3 py-2 text-white/50 bg-black/30">SAP / ERP</div>
-          <div className="border border-white/15 px-3 py-2 text-white/50 bg-black/30">CMMS</div>
+          <div className="border border-white/15 px-3 py-2 text-white/50 bg-black/30">Reelin ID Audit</div>
         </div>
         <div className="text-center text-white/30">↓</div>
         <div className="border border-dashed border-white/20 px-4 py-3 text-white/45 bg-black/20">
@@ -345,18 +348,18 @@ function ArchitectureVisual() {
 function UseCasesSection() {
   const cases = [
     {
-      title: "Closed-Loop Work Orders",
-      desc: "Cut the hours between a predictive failure alert and a mobilized maintenance response.",
-      image: "/images/machinery.jpg",
-    },
-    {
-      title: "Institutional Memory",
-      desc: "Preserve senior engineer decision logic before retirement. Query it against live asset data.",
+      title: "Legacy Archive Digitization",
+      desc: "Shell and peers stopped corporate digitization — too expensive. Operadroom scans one room, AI indexes every page, no manual keying.",
       image: "/images/factory-floor.jpg",
     },
     {
-      title: "Executive Decision Support",
-      desc: "Run what-if scenarios on live telemetry. Deliver board-ready risk memos in minutes.",
+      title: "Institutional Memory Search",
+      desc: "Retired engineers take decades of handwritten knowledge with them. Query the full archive in seconds with cited sources.",
+      image: "/images/machinery.jpg",
+    },
+    {
+      title: "Safe Isolation & Execution",
+      desc: "Once records are live, agents trace legacy P&IDs, draft isolation plans, and compile SAP-ready work orders for engineer release.",
       image: "/images/industrial-workers.jpg",
     },
   ];
@@ -366,7 +369,7 @@ function UseCasesSection() {
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-14 sm:py-20 lg:py-24">
         <p className="text-[10px] sm:text-[11px] tracking-[0.18em] sm:tracking-[0.22em] uppercase text-white/45 mb-3 sm:mb-4">Use Cases</p>
         <h2 className="text-[clamp(1.5rem,5vw,3rem)] font-bold uppercase tracking-tight max-w-2xl">
-          Bridging Digital Steel and Cognitive Execution
+          Records First. Then the Brain Acts.
         </h2>
         <div className="mt-10 sm:mt-16 grid sm:grid-cols-2 lg:grid-cols-3 gap-px bg-white/10">
           {cases.map((c, i) => (
@@ -393,20 +396,20 @@ function UseCasesSection() {
 function SecuritySection() {
   const items = [
     {
-      title: "Deployment Isolation",
-      desc: "Cloud VPC, on-prem, or hybrid OT/IT zones. Your infrastructure, your rules.",
+      title: "Isolated Cloud Sandbox",
+      desc: "Dedicated secure tenant per facility. Customer data never trains shared models. EU or on-prem deployment available.",
     },
     {
-      title: "Data Sovereignty",
-      desc: "Customer data never trains shared models. Read-only telemetry by default.",
+      title: "Reelin ID · On-Chain Audit",
+      desc: "Every page upload, index, search, and citation sealed on blockchain. Copy or export anomalies flagged for cyber security review.",
     },
     {
       title: "Human-in-the-Loop",
-      desc: "Agents draft actions. Engineers approve before any write operation executes.",
+      desc: "Agents draft actions. Engineers approve before any write operation executes. Full compliance log exportable.",
     },
     {
-      title: "Reelin ID Audit Trail",
-      desc: "Every agent action cryptographically tied to an authorized identity. Full compliance logs.",
+      title: "Read-Only by Default",
+      desc: "No OT access. No autonomous SAP posting. Integrates alongside Siemens, Cognite, and SAP — connective layer only.",
     },
   ];
 
@@ -418,11 +421,12 @@ function SecuritySection() {
       <div className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-6 py-14 sm:py-20 lg:py-24">
         <p className="text-[10px] sm:text-[11px] tracking-[0.18em] sm:tracking-[0.22em] uppercase text-white/45 mb-3 sm:mb-4">Security</p>
         <h2 className="text-[clamp(1.5rem,5vw,3rem)] font-bold uppercase tracking-tight max-w-3xl">
-          Enterprise-Grade Isolation. Your Data Never Trains Our Models.
+          Your Data in a Safe Sandbox. Every Action on Chain.
         </h2>
         <p className="mt-4 sm:mt-6 text-[14px] sm:text-[15px] text-white/55 max-w-2xl leading-relaxed">
-          Operadroom integrates with your existing OT stack through approved APIs. We do not
-          replace Siemens, SAP, or Cognite — we connect them with auditable autonomous agents.
+          Facility records stay in an isolated cloud sandbox with Reelin ID blockchain audit. Upload a page — it is
+          hashed and logged. Run a search — logged. Open a citation — logged. Cyber security can review the full chain
+          at any time.
         </p>
         <div className="mt-10 sm:mt-14 grid grid-cols-1 sm:grid-cols-2 gap-px bg-white/10">
           {items.map((item) => (
@@ -446,12 +450,12 @@ function PilotSection() {
       <div className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-6 py-14 sm:py-24 w-full">
         <p className="text-[10px] sm:text-[11px] tracking-[0.18em] sm:tracking-[0.22em] uppercase text-white/45 mb-3 sm:mb-4">Pilot Program</p>
         <h2 className="text-[clamp(1.5rem,5vw,3rem)] font-bold uppercase tracking-tight max-w-2xl">
-          90-Day Facility Proof of Concept
+          90-Day Records Pilot
         </h2>
         <p className="mt-4 sm:mt-6 text-[14px] sm:text-[15px] text-white/60 max-w-xl leading-relaxed">
-          Start at a single refinery, chemical plant, or upstream asset. Integrate with your
-          digital twin data layer. Measure time from alert to draft work order. Scale regionally
-          on proven ROI.
+          Start with one archive room at a refinery, chemical plant, or upstream asset. Digitize thousands of legacy
+          pages, prove searchable Plant Memory, then expand to Safe Isolation and maintenance execution on the same
+          corpus.
         </p>
         <div className="mt-8 sm:mt-10">
           <a
@@ -520,8 +524,8 @@ export default function Home() {
         <SplitSection
           id="platform"
           label="The Problem"
-          title="Digital Twins See Everything. Humans Still Move the Data."
-          body="Industrial organizations have invested billions in real-time asset monitoring. When a sensor flags critical vibration or pressure drift, the alert is instant — but engineers still spend hours searching manuals, checking inventory, and filing tickets across siloed systems."
+          title="Centuries of Records. Zero Searchability."
+          body="Major operators stopped enterprise digitization — manual indexing cost millions and produced static PDFs on dead drives. Meanwhile, engineers still spend half a day in archive rooms hunting handwritten maintenance cards, legacy P&IDs, and shift logs that predate their careers."
           visual={
             <ImagePanel
               src="/images/oil-refinery.webp"
@@ -531,9 +535,10 @@ export default function Home() {
           }
         />
         <SplitSection
-          label="The Solution"
-          title="Autonomous Agents Between Twin and ERP"
-          body="Operadroom runs on the Reelin agent architecture — read, reason, act across systems — applied to industrial maintenance workflows. Predictive monitoring becomes closed-loop digital execution."
+          id="memory"
+          label="Plant Memory"
+          title="Digitize Once. Query Forever."
+          body="Operadroom Vault ingests scanned legacy archives — the AI agent runs Vision OCR, classifies documents, tags equipment IDs, extracts entities, and builds a knowledge graph. What used to require a room full of paper and hours of search becomes a conversational brain your engineers can ask in plain English."
           reverse
           visual={
             <div className="space-y-4">
@@ -548,16 +553,29 @@ export default function Home() {
           }
         />
         <SplitSection
+          label="Agentic Brain"
+          title="Then the Brain Solves Real Problems"
+          body="Indexing is step one. Once records are live, Operadroom agents resolve Safe Isolation from legacy P&IDs, cross-reference live alerts against decades of maintenance history, prevent institutional amnesia as engineers retire, and draft SAP-ready work orders — always human-in-the-loop, always Reelin ID audited."
+          visual={<ArchitectureVisual />}
+        />
+        <SplitSection
           label="Architecture"
           title="Integration, Not Replacement"
-          body="Operadroom runs alongside Siemens, SAP, Aveva, Cognite, and IBM Maximo. We handle the connective tissue: translating live telemetry into spec'd maintenance actions with full audit trails via Reelin ID."
-          visual={<ArchitectureVisual />}
+          body="Operadroom runs alongside Siemens, SAP, Aveva, Cognite, and IBM Maximo. We handle the connective tissue — from dusty archive to auditable agent action — without touching OT or replacing your existing stack."
+          reverse
+          visual={
+            <ImagePanel
+              src="/images/data-network.jpg"
+              alt="Industrial data network visualization"
+              className="aspect-[4/5] sm:aspect-[16/11] w-full max-w-lg lg:ml-auto"
+            />
+          }
         />
         <FullBleedBanner
           src="/images/iot-sensors.jpg"
-          label="The Connective Layer"
-          title="Digital Steel Meets Cognitive Execution"
-          body="Industrial twins monitor physical assets. Operadroom agents move data between systems, parse engineering context, and execute workflows — closing the loop your dashboards leave open."
+          label="Heavy Industry"
+          title="Built for Chemical Plants, Refineries, and Upstream"
+          body="Legacy European facilities with decades of paper archives. US sites with scattered digital exports. Operadroom meets operators where their records actually live — and turns them into an agentic brain."
         />
         <UseCasesSection />
         <SecuritySection />

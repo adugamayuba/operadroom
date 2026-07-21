@@ -7,3 +7,20 @@ export {
   type VaultAnswer,
   type VaultCitation,
 } from "./queries";
+export {
+  AGENT_DOC_QUEUE,
+  AGENT_STAGES,
+  AGENT_INSIGHTS,
+  BRAIN_ACTIONS,
+  type AgentDocJob,
+  type AgentStage,
+  type TrendInsight,
+  type BrainAction,
+} from "./agentFlow";
+export {
+  createAuditEvent,
+  AUDIT_EVENT_LABELS,
+  SECURITY_COPY,
+  type AuditEvent,
+  type AuditEventType,
+} from "./audit";
