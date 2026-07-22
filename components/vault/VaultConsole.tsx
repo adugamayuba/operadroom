@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LogoMark } from "@/components/demo/LogoMark";
 import { AgentPageIngest } from "@/components/vault/AgentPageIngest";
+import { KnowledgeGraphExplorer } from "@/components/vault/KnowledgeGraphExplorer";
 import { ScannedDocument } from "@/components/vault/ScannedDocument";
 import { trackEvent } from "@/lib/analytics";
 import { FACILITY } from "@/lib/demo/scenarios";
@@ -23,7 +24,7 @@ import {
   type VaultAnswer,
 } from "@/lib/vault";
 
-type DemoPhase = "intro" | "ingest" | "insights" | "brain" | "query";
+type DemoPhase = "intro" | "ingest" | "insights" | "graph" | "brain" | "query";
 
 interface ChatMessage {
   id: string;
@@ -91,8 +92,8 @@ function AuditLedger({ events }: { events: AuditEvent[] }) {
 }
 
 function PhaseStepper({ phase }: { phase: DemoPhase }) {
-  const steps = ["Start", "Ingest", "Insights", "Actions", "Query"];
-  const idx = ["intro", "ingest", "insights", "brain", "query"].indexOf(phase);
+  const steps = ["Start", "Ingest", "Insights", "Graph", "Actions", "Query"];
+  const idx = ["intro", "ingest", "insights", "graph", "brain", "query"].indexOf(phase);
   return (
     <div className="flex flex-wrap gap-1">
       {steps.map((s, i) => (
@@ -188,7 +189,7 @@ export function VaultConsole() {
   useEffect(() => {
     if (phase !== "insights") return;
     if (visibleInsights >= AGENT_INSIGHTS.length) {
-      const t = setTimeout(() => setPhase("brain"), 1000);
+      const t = setTimeout(() => setPhase("graph"), 1000);
       return () => clearTimeout(t);
     }
     const t = setTimeout(() => setVisibleInsights((v) => v + 1), 650);
@@ -290,6 +291,21 @@ export function VaultConsole() {
                       </div>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {phase === "graph" && (
+                <div className="mt-6">
+                  <KnowledgeGraphExplorer
+                    onContinue={() => {
+                      pushAudit("graph_linked", "Knowledge graph explored · P-2047 cluster");
+                      setPhase("brain");
+                    }}
+                    onOpenDocument={(docId) => {
+                      setSelectedDocId(docId);
+                      pushAudit("citation_opened", `Graph → ${docId}`);
+                    }}
+                  />
                 </div>
               )}
 

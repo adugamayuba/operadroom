@@ -18,6 +18,16 @@ export {
   type BrainAction,
 } from "./agentFlow";
 export {
+  GRAPH_NODES,
+  GRAPH_EDGES,
+  getConnectedNodeIds,
+  getNodeById,
+  KIND_LABELS,
+  type GraphNode,
+  type GraphEdge,
+  type GraphNodeKind,
+} from "./knowledgeGraph";
+export {
   createAuditEvent,
   AUDIT_EVENT_LABELS,
   SECURITY_COPY,
