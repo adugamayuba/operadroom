@@ -173,7 +173,6 @@ function PhaseStepper({
 export function VaultConsole() {
   const [phase, setPhase] = useState<DemoPhase>("intro");
   const [maxPhaseReached, setMaxPhaseReached] = useState(0);
-  const [queryTab, setQueryTab] = useState<"ask" | "graph">("ask");
   const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
   const [docIndex, setDocIndex] = useState(0);
   const [stageIndex, setStageIndex] = useState(0);
@@ -200,10 +199,6 @@ export function VaultConsole() {
   useEffect(() => {
     const idx = PHASE_ORDER.indexOf(phase);
     setMaxPhaseReached((m) => Math.max(m, idx));
-  }, [phase]);
-
-  useEffect(() => {
-    if (phase === "query") setQueryTab("ask");
   }, [phase]);
 
   const pushAudit = useCallback((type: Parameters<typeof createAuditEvent>[0], detail: string) => {
@@ -378,9 +373,8 @@ export function VaultConsole() {
               )}
 
               {phase === "graph" && (
-                <div className="mt-6 grid lg:grid-cols-2 gap-4">
+                <div className="mt-6">
                   <KnowledgeGraphExplorer
-                    compact
                     continueLabel={
                       maxPhaseReached >= PHASE_ORDER.indexOf("query") ? "Back to Ask the plant →" : "Continue to actions →"
                     }
@@ -388,7 +382,6 @@ export function VaultConsole() {
                       pushAudit("graph_linked", "Knowledge graph explored · P-2047 cluster");
                       if (maxPhaseReached >= PHASE_ORDER.indexOf("query")) {
                         goToPhase("query");
-                        setQueryTab("ask");
                       } else {
                         goToPhase("brain");
                       }
@@ -398,15 +391,6 @@ export function VaultConsole() {
                       pushAudit("citation_opened", `Graph → ${docId}`);
                     }}
                   />
-                  <div className="vault-panel p-4 flex items-start justify-center min-h-[380px] bg-black">
-                    {selectedDoc ? (
-                      <ScannedDocument doc={selectedDoc} autoScrollHighlight />
-                    ) : (
-                      <p className="text-[13px] text-white/30 uppercase tracking-[0.15em] mt-20">
-                        Select a node or source document · full page view
-                      </p>
-                    )}
-                  </div>
                 </div>
               )}
 
@@ -445,49 +429,7 @@ export function VaultConsole() {
               )}
 
               {phase === "query" && (
-                <div className="mt-6">
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    <button
-                      type="button"
-                      onClick={() => setQueryTab("ask")}
-                      className={`text-[12px] uppercase tracking-[0.14em] px-4 py-2 border ${
-                        queryTab === "ask" ? "border-white text-white bg-white/10" : "border-white/25 text-white/50 hover:border-white/50"
-                      }`}
-                    >
-                      Ask the plant
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setQueryTab("graph")}
-                      className={`text-[12px] uppercase tracking-[0.14em] px-4 py-2 border ${
-                        queryTab === "graph" ? "border-white text-white bg-white/10" : "border-white/25 text-white/50 hover:border-white/50"
-                      }`}
-                    >
-                      Knowledge graph
-                    </button>
-                  </div>
-
-                  {queryTab === "graph" ? (
-                    <div className="grid lg:grid-cols-2 gap-4">
-                      <KnowledgeGraphExplorer
-                        compact
-                        onOpenDocument={(docId) => {
-                          setSelectedDocId(docId);
-                          pushAudit("citation_opened", `Graph → ${docId}`);
-                        }}
-                      />
-                      <div className="vault-panel p-4 flex items-start justify-center min-h-[360px] bg-black">
-                        {selectedDoc ? (
-                          <ScannedDocument doc={selectedDoc} autoScrollHighlight />
-                        ) : (
-                          <p className="text-[13px] text-white/30 uppercase tracking-[0.15em] mt-20">
-                            Select a source document · full page view
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                <div className="grid lg:grid-cols-2 gap-4">
+                <div className="mt-6 grid lg:grid-cols-2 gap-4">
                   <div className="vault-panel flex flex-col min-h-[500px]">
                     <div className="p-4 border-b border-white/10">
                       <p className="vault-label">Ask the plant</p>
@@ -589,8 +531,6 @@ export function VaultConsole() {
                       </p>
                     )}
                   </div>
-                </div>
-                  )}
                 </div>
               )}
 
