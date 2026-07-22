@@ -6,6 +6,7 @@ export {
   fallbackAnswer,
   type VaultAnswer,
   type VaultCitation,
+  SAFE_ISOLATION_STEPS,
 } from "./queries";
 export {
   AGENT_DOC_QUEUE,

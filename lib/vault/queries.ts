@@ -14,6 +14,7 @@ export interface VaultAnswer {
   searchMs: number;
   confidence: number;
   followUp?: string;
+  showIsolationChecklist?: boolean;
 }
 
 export const SUGGESTED_PROMPTS = [
@@ -21,7 +22,22 @@ export const SUGGESTED_PROMPTS = [
   "Draft a Safe Isolation plan for P-2047 from legacy records",
   "Have we ever had a pressure drop on Tank T-8 during winter freezes?",
   "Show maintenance history for V-4820 including old P&IDs",
+  "Compare P-2047 and V-4820 — linked incidents and isolation paths",
 ] as const;
+
+export interface IsolationStep {
+  id: string;
+  tag: string;
+  action: string;
+}
+
+export const SAFE_ISOLATION_STEPS: IsolationStep[] = [
+  { id: "s1", tag: "IV-2047-A", action: "Close and lock upstream isolation valve" },
+  { id: "s2", tag: "IV-2047-B", action: "Close and lock downstream isolation valve" },
+  { id: "s3", tag: "BD-2047-1", action: "Bleed charge line · verify zero energy" },
+  { id: "s4", tag: "LOTO 2047-1–4", action: "Apply locks at four designated LOTO points" },
+  { id: "s5", tag: "AM-05", action: "Execution engineer + permit holder sign-off before work" },
+];
 
 interface QueryRule {
   id: string;
@@ -86,7 +102,8 @@ const RULES: QueryRule[] = [
       reelinId: "RID-VAULT-20260722-P2047-ISO",
       searchMs: 1800,
       confidence: 0.91,
-      followUp: "Open execution demo to draft SAP work order on this isolation?",
+      showIsolationChecklist: true,
+      followUp: "Compare P-2047 and V-4820 — linked incidents and isolation paths",
     },
   },
   {
@@ -132,6 +149,39 @@ const RULES: QueryRule[] = [
       reelinId: "RID-VAULT-20260722-V4820",
       searchMs: 2100,
       confidence: 0.87,
+    },
+  },
+  {
+    id: "asset-compare",
+    match: (q) =>
+      /compare/i.test(q) &&
+      (/p-?2047/i.test(q) || /v-?4820/i.test(q)) &&
+      (/v-?4820/i.test(q) || /p-?2047/i.test(q)),
+    answer: {
+      id: "asset-compare",
+      answer:
+        "**P-2047** (charge pump) carries the deepest legacy record trail: **1972 bearing modification**, **1988 vibration repeat**, and a complete **Safe Isolation path** (IV-2047-A/B, AM-05). **V-4820** (fractionator feed valve) sits downstream on the same train per P&ID 1968-A — linked via **E-1156**, with recent **actuator stiction** (Apr 2026). Shared isolation: work on V-4820 requires P-2047 train isolation first. No bearing incidents on V-4820; failure mode is valve/actuator, not rotating equipment.",
+      citations: [
+        {
+          docId: "doc-1972-p2047",
+          label: "1972 maintenance card · P-2047",
+          excerpt: "Non-standard spacer · do not revert OEM.",
+        },
+        {
+          docId: "doc-pid-2047",
+          label: "P&ID Rev. 1968-A · train layout",
+          excerpt: "P-2047 → E-1156 → V-4820 charge train.",
+        },
+        {
+          docId: "doc-v4820-stiction",
+          label: "Field note · V-4820 · Apr 2026",
+          excerpt: "Actuator stiction · isolate per AM-05.",
+        },
+      ],
+      reelinId: "RID-VAULT-20260722-COMPARE",
+      searchMs: 2600,
+      confidence: 0.9,
+      followUp: "Draft a Safe Isolation plan for P-2047 from legacy records",
     },
   },
 ];

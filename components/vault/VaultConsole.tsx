@@ -1,9 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LogoMark } from "@/components/demo/LogoMark";
 import { AgentPageIngest } from "@/components/vault/AgentPageIngest";
+import { CorpusStatsBar, type LiveCorpusStats } from "@/components/vault/CorpusStatsBar";
 import { KnowledgeGraphExplorer } from "@/components/vault/KnowledgeGraphExplorer";
+import { SafeIsolationChecklist } from "@/components/vault/SafeIsolationChecklist";
 import { ScannedDocument } from "@/components/vault/ScannedDocument";
 import { trackEvent } from "@/lib/analytics";
 import { FACILITY } from "@/lib/demo/scenarios";
@@ -28,6 +30,43 @@ type DemoPhase = "intro" | "ingest" | "insights" | "graph" | "brain" | "query";
 
 const PHASE_ORDER: DemoPhase[] = ["intro", "ingest", "insights", "graph", "brain", "query"];
 const PHASE_LABELS = ["Start", "Ingest", "Insights", "Graph", "Actions", "Query"];
+
+const DEMO_PAGES = AGENT_DOC_QUEUE.reduce((s, j) => s + j.pages, 0);
+
+function insightBorder(severity: "info" | "warn" | "critical") {
+  if (severity === "critical") return "border-red-500/40 bg-red-500/5";
+  if (severity === "warn") return "border-amber-500/35 bg-amber-500/5";
+  return "border-white/15";
+}
+
+function computeLiveStats(
+  phase: DemoPhase,
+  docIndex: number,
+  stageIndex: number,
+  ingestDone: boolean,
+  extractedCount: number
+): LiveCorpusStats {
+  const complete = ingestDone || PHASE_ORDER.indexOf(phase) > PHASE_ORDER.indexOf("ingest");
+  if (complete) {
+    return { pages: DEMO_PAGES, documents: AGENT_DOC_QUEUE.length, entities: 89, graphLinks: 26, complete: true };
+  }
+  if (phase !== "ingest") {
+    return { pages: 0, documents: 0, entities: 0, graphLinks: 0, complete: false };
+  }
+  let pages = 0;
+  for (let i = 0; i < docIndex; i++) pages += AGENT_DOC_QUEUE[i].pages;
+  const job = AGENT_DOC_QUEUE[docIndex];
+  if (job) pages += Math.ceil(job.pages * ((stageIndex + 1) / AGENT_STAGES.length));
+  const graphStageIdx = AGENT_STAGES.findIndex((s) => s.id === "graph");
+  const graphLinks = docIndex * 4 + (stageIndex >= graphStageIdx ? stageIndex - graphStageIdx + 1 : 0);
+  return {
+    pages,
+    documents: docIndex + (stageIndex >= AGENT_STAGES.length - 1 ? 1 : 0),
+    entities: extractedCount * 4 + docIndex * 11,
+    graphLinks,
+    complete: false,
+  };
+}
 
 interface ChatMessage {
   id: string;
@@ -147,6 +186,11 @@ export function VaultConsole() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const selectedDoc = selectedDocId ? getDocument(selectedDocId) : null;
   const currentJob = AGENT_DOC_QUEUE[docIndex];
+
+  const liveStats = useMemo(
+    () => computeLiveStats(phase, docIndex, stageIndex, ingestDone, extractedLabels.length),
+    [phase, docIndex, stageIndex, ingestDone, extractedLabels.length]
+  );
 
   const goToPhase = useCallback((p: DemoPhase) => {
     setPhase(p);
@@ -277,6 +321,8 @@ export function VaultConsole() {
                 <PhaseStepper phase={phase} maxReached={maxPhaseReached} onNavigate={goToPhase} />
               </div>
 
+              {phase !== "intro" && <CorpusStatsBar stats={liveStats} />}
+
               {phase === "intro" && (
                 <div className="mt-6 space-y-4">
                   <div className="vault-panel p-6">
@@ -321,7 +367,7 @@ export function VaultConsole() {
                   <p className="vault-label mb-4">Cross-document insights</p>
                   <div className="grid sm:grid-cols-2 gap-3">
                     {AGENT_INSIGHTS.slice(0, visibleInsights).map((ins) => (
-                      <div key={ins.id} className="border border-white/15 p-4 vault-chip-in text-[14px]">
+                      <div key={ins.id} className={`border p-4 vault-chip-in text-[14px] ${insightBorder(ins.severity)}`}>
                         <p className="text-white font-medium uppercase tracking-wide text-[12px]">{ins.title}</p>
                         <p className="text-white/50 mt-2 leading-relaxed">{ins.detail}</p>
                         <p className="font-mono text-[11px] mt-3 text-white/30">{ins.assets.join(" · ")}</p>
@@ -332,8 +378,9 @@ export function VaultConsole() {
               )}
 
               {phase === "graph" && (
-                <div className="mt-6">
+                <div className="mt-6 grid lg:grid-cols-2 gap-4">
                   <KnowledgeGraphExplorer
+                    compact
                     continueLabel={
                       maxPhaseReached >= PHASE_ORDER.indexOf("query") ? "Back to Ask the plant →" : "Continue to actions →"
                     }
@@ -351,6 +398,15 @@ export function VaultConsole() {
                       pushAudit("citation_opened", `Graph → ${docId}`);
                     }}
                   />
+                  <div className="vault-panel p-4 flex items-start justify-center min-h-[380px] bg-black">
+                    {selectedDoc ? (
+                      <ScannedDocument doc={selectedDoc} autoScrollHighlight />
+                    ) : (
+                      <p className="text-[13px] text-white/30 uppercase tracking-[0.15em] mt-20">
+                        Select a node or source document · full page view
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -470,6 +526,13 @@ export function VaultConsole() {
                             ) : (
                               <>
                                 <p className="leading-relaxed">{renderBold(msg.text)}</p>
+                                {msg.answer?.showIsolationChecklist && <SafeIsolationChecklist />}
+                                {msg.answer && (
+                                  <p className="text-[11px] font-mono text-white/30 mt-2 pt-2 border-t border-white/10">
+                                    {Math.round(msg.answer.confidence * 100)}% · {msg.answer.searchMs}ms ·{" "}
+                                    {msg.answer.reelinId}
+                                  </p>
+                                )}
                                 {msg.answer?.citations.map((c) => (
                                   <button
                                     key={c.docId}
@@ -483,6 +546,15 @@ export function VaultConsole() {
                                     {c.label}
                                   </button>
                                 ))}
+                                {msg.answer?.followUp && (
+                                  <button
+                                    type="button"
+                                    onClick={() => submitQuery(msg.answer!.followUp!)}
+                                    className="vault-suggest-btn mt-2 w-full"
+                                  >
+                                    {msg.answer.followUp}
+                                  </button>
+                                )}
                               </>
                             )}
                           </div>
