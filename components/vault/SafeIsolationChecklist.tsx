@@ -7,8 +7,8 @@ export function SafeIsolationChecklist() {
   const [checked, setChecked] = useState<Set<number>>(new Set());
 
   return (
-    <div className="mt-3 border border-emerald-500/30 bg-emerald-500/5 p-3">
-      <p className="vault-label text-emerald-400/80 mb-2">Safe Isolation checklist · P-2047</p>
+    <div className="mt-3 border border-white/15 bg-black p-3">
+      <p className="vault-label mb-2">Safe Isolation checklist · P-2047</p>
       <ol className="space-y-2">
         {SAFE_ISOLATION_STEPS.map((step, i) => {
           const done = checked.has(i);
@@ -29,8 +29,8 @@ export function SafeIsolationChecklist() {
                 }`}
               >
                 <span
-                  className={`shrink-0 w-4 h-4 mt-0.5 border flex items-center justify-center text-[10px] ${
-                    done ? "border-emerald-400 bg-emerald-400/20 text-emerald-300" : "border-white/25"
+                  className={`shrink-0 w-4 h-4 mt-0.5 border flex items-center justify-center text-[10px] font-mono ${
+                    done ? "border-white bg-white text-black" : "border-white/25 text-white/50"
                   }`}
                 >
                   {done ? "✓" : i + 1}

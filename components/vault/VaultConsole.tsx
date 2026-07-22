@@ -30,12 +30,6 @@ type DemoPhase = "intro" | "ingest" | "insights" | "graph" | "brain" | "query";
 const PHASE_ORDER: DemoPhase[] = ["intro", "ingest", "insights", "graph", "brain", "query"];
 const PHASE_LABELS = ["Start", "Ingest", "Insights", "Graph", "Actions", "Query"];
 
-function insightBorder(severity: "info" | "warn" | "critical") {
-  if (severity === "critical") return "border-red-500/40 bg-red-500/5";
-  if (severity === "warn") return "border-amber-500/35 bg-amber-500/5";
-  return "border-white/15";
-}
-
 interface ChatMessage {
   id: string;
   role: "user" | "assistant";
@@ -323,7 +317,7 @@ export function VaultConsole() {
                   <p className="vault-label mb-4">Cross-document insights</p>
                   <div className="grid sm:grid-cols-2 gap-3">
                     {AGENT_INSIGHTS.slice(0, visibleInsights).map((ins) => (
-                      <div key={ins.id} className={`border p-4 vault-chip-in text-[14px] ${insightBorder(ins.severity)}`}>
+                      <div key={ins.id} className="border border-white/15 p-4 vault-chip-in text-[14px]">
                         <p className="text-white font-medium uppercase tracking-wide text-[12px]">{ins.title}</p>
                         <p className="text-white/50 mt-2 leading-relaxed">{ins.detail}</p>
                         <p className="font-mono text-[11px] mt-3 text-white/30">{ins.assets.join(" · ")}</p>
