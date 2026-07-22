@@ -18,8 +18,15 @@
   --demo-alert-soft: rgba(255, 255, 255, 0.05);
   --demo-focus: #ffffff;
   --demo-focus-soft: rgba(255, 255, 255, 0.08);
+  --vault-text-xs: 0.8125rem;
+  --vault-text-sm: 0.9375rem;
+  --vault-text-base: 1.0625rem;
+  --vault-text-lg: 1.25rem;
+  --vault-text-xl: 1.625rem;
   background: #000;
   color: #fff;
+  font-size: var(--vault-text-base);
+  line-height: 1.55;
 }
 
 .vault-root .vault-panel {
@@ -28,18 +35,23 @@
 }
 
 .vault-root .vault-label {
-  font-size: 10px;
+  font-size: var(--vault-text-xs);
   font-weight: 500;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.45);
 }
 
+.vault-root .vault-body {
+  font-size: var(--vault-text-sm);
+  color: rgba(255, 255, 255, 0.55);
+}
+
 .vault-root .vault-btn-primary {
-  padding: 0.625rem 1.5rem;
-  font-size: 11px;
+  padding: 0.75rem 1.625rem;
+  font-size: var(--vault-text-xs);
   font-weight: 500;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   background: #fff;
   color: #000;
@@ -52,8 +64,8 @@
 }
 
 .vault-root .vault-btn-secondary {
-  padding: 0.625rem 1.25rem;
-  font-size: 11px;
+  padding: 0.75rem 1.375rem;
+  font-size: var(--vault-text-xs);
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -61,6 +73,22 @@
   color: #fff;
   border: 1px solid rgba(255, 255, 255, 0.35);
   transition: background 0.2s;
+}
+
+.vault-root .vault-suggest-btn {
+  font-size: var(--vault-text-xs);
+  line-height: 1.45;
+  text-align: left;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.65);
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+
+.vault-root .vault-suggest-btn:hover {
+  border-color: rgba(255, 255, 255, 0.45);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .vault-root .vault-btn-secondary:hover {

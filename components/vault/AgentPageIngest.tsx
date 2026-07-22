@@ -30,7 +30,7 @@ export function AgentPageIngest({
           </span>
         </div>
         <FullPageDocument doc={doc} activeStage={currentStage} showOverlays />
-        <p className="mt-3 text-[10px] text-center text-white/35 uppercase tracking-[0.15em]">
+        <p className="mt-3 text-[13px] text-center text-white/35 uppercase tracking-[0.15em]">
           {currentStage ? AGENT_STAGES[stageIndex].label : "…"} — {AGENT_STAGES[stageIndex]?.detail}
         </p>
       </div>
@@ -42,7 +42,7 @@ export function AgentPageIngest({
             {AGENT_STAGES.map((s, i) => (
               <div
                 key={s.id}
-                className={`text-[10px] px-2 py-1 border ${
+                className={`text-[13px] px-2.5 py-1.5 border ${
                   i === stageIndex
                     ? "border-white text-white bg-white/10"
                     : i < stageIndex
@@ -61,12 +61,12 @@ export function AgentPageIngest({
           <p className="vault-label mb-2">Extracted</p>
           <div className="flex flex-wrap gap-1.5">
             {extractedLabels.length === 0 && (
-              <span className="text-[10px] text-white/30">Agent picking…</span>
+              <span className="text-[13px] text-white/30">Agent picking…</span>
             )}
             {extractedLabels.map((label, i) => (
               <span
                 key={label}
-                className="vault-chip-in text-[9px] font-mono uppercase tracking-wider border border-white/30 px-2 py-1 text-white/80"
+                className="vault-chip-in text-[11px] font-mono uppercase tracking-wider border border-white/30 px-2 py-1 text-white/80"
                 style={{ animationDelay: `${i * 80}ms` }}
               >
                 {label}
