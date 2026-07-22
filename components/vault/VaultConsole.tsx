@@ -26,6 +26,9 @@ import {
 
 type DemoPhase = "intro" | "ingest" | "insights" | "graph" | "brain" | "query";
 
+const PHASE_ORDER: DemoPhase[] = ["intro", "ingest", "insights", "graph", "brain", "query"];
+const PHASE_LABELS = ["Start", "Ingest", "Insights", "Graph", "Actions", "Query"];
+
 interface ChatMessage {
   id: string;
   role: "user" | "assistant";
@@ -91,27 +94,47 @@ function AuditLedger({ events }: { events: AuditEvent[] }) {
   );
 }
 
-function PhaseStepper({ phase }: { phase: DemoPhase }) {
-  const steps = ["Start", "Ingest", "Insights", "Graph", "Actions", "Query"];
-  const idx = ["intro", "ingest", "insights", "graph", "brain", "query"].indexOf(phase);
+function PhaseStepper({
+  phase,
+  maxReached,
+  onNavigate,
+}: {
+  phase: DemoPhase;
+  maxReached: number;
+  onNavigate: (p: DemoPhase) => void;
+}) {
+  const idx = PHASE_ORDER.indexOf(phase);
   return (
     <div className="flex flex-wrap gap-1">
-      {steps.map((s, i) => (
-        <span
-          key={s}
-          className={`text-[11px] uppercase tracking-[0.16em] px-2.5 py-1.5 border ${
-            i <= idx ? "border-white text-white" : "border-white/15 text-white/25"
-          }`}
-        >
-          {s}
-        </span>
-      ))}
+      {PHASE_LABELS.map((s, i) => {
+        const reachable = i <= maxReached;
+        const active = i === idx;
+        return (
+          <button
+            key={s}
+            type="button"
+            disabled={!reachable}
+            onClick={() => reachable && onNavigate(PHASE_ORDER[i])}
+            className={`text-[11px] uppercase tracking-[0.16em] px-2.5 py-1.5 border transition-colors ${
+              active
+                ? "border-white text-white bg-white/10"
+                : reachable
+                  ? "border-white/40 text-white/70 hover:border-white hover:text-white"
+                  : "border-white/15 text-white/25 cursor-not-allowed"
+            }`}
+          >
+            {s}
+          </button>
+        );
+      })}
     </div>
   );
 }
 
 export function VaultConsole() {
   const [phase, setPhase] = useState<DemoPhase>("intro");
+  const [maxPhaseReached, setMaxPhaseReached] = useState(0);
+  const [queryTab, setQueryTab] = useState<"ask" | "graph">("ask");
   const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
   const [docIndex, setDocIndex] = useState(0);
   const [stageIndex, setStageIndex] = useState(0);
@@ -124,6 +147,20 @@ export function VaultConsole() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const selectedDoc = selectedDocId ? getDocument(selectedDocId) : null;
   const currentJob = AGENT_DOC_QUEUE[docIndex];
+
+  const goToPhase = useCallback((p: DemoPhase) => {
+    setPhase(p);
+    trackEvent("vault_phase", { phase: p });
+  }, []);
+
+  useEffect(() => {
+    const idx = PHASE_ORDER.indexOf(phase);
+    setMaxPhaseReached((m) => Math.max(m, idx));
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase === "query") setQueryTab("ask");
+  }, [phase]);
 
   const pushAudit = useCallback((type: Parameters<typeof createAuditEvent>[0], detail: string) => {
     setAuditEvents((prev) => [createAuditEvent(type, detail), ...prev].slice(0, 50));
@@ -237,7 +274,7 @@ export function VaultConsole() {
                     sealed on-chain via Reelin ID.
                   </p>
                 </div>
-                <PhaseStepper phase={phase} />
+                <PhaseStepper phase={phase} maxReached={maxPhaseReached} onNavigate={goToPhase} />
               </div>
 
               {phase === "intro" && (
@@ -297,9 +334,17 @@ export function VaultConsole() {
               {phase === "graph" && (
                 <div className="mt-6">
                   <KnowledgeGraphExplorer
+                    continueLabel={
+                      maxPhaseReached >= PHASE_ORDER.indexOf("query") ? "Back to Ask the plant →" : "Continue to actions →"
+                    }
                     onContinue={() => {
                       pushAudit("graph_linked", "Knowledge graph explored · P-2047 cluster");
-                      setPhase("brain");
+                      if (maxPhaseReached >= PHASE_ORDER.indexOf("query")) {
+                        goToPhase("query");
+                        setQueryTab("ask");
+                      } else {
+                        goToPhase("brain");
+                      }
                     }}
                     onOpenDocument={(docId) => {
                       setSelectedDocId(docId);
@@ -344,7 +389,49 @@ export function VaultConsole() {
               )}
 
               {phase === "query" && (
-                <div className="mt-6 grid lg:grid-cols-2 gap-4">
+                <div className="mt-6">
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <button
+                      type="button"
+                      onClick={() => setQueryTab("ask")}
+                      className={`text-[12px] uppercase tracking-[0.14em] px-4 py-2 border ${
+                        queryTab === "ask" ? "border-white text-white bg-white/10" : "border-white/25 text-white/50 hover:border-white/50"
+                      }`}
+                    >
+                      Ask the plant
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setQueryTab("graph")}
+                      className={`text-[12px] uppercase tracking-[0.14em] px-4 py-2 border ${
+                        queryTab === "graph" ? "border-white text-white bg-white/10" : "border-white/25 text-white/50 hover:border-white/50"
+                      }`}
+                    >
+                      Knowledge graph
+                    </button>
+                  </div>
+
+                  {queryTab === "graph" ? (
+                    <div className="grid lg:grid-cols-2 gap-4">
+                      <KnowledgeGraphExplorer
+                        compact
+                        onOpenDocument={(docId) => {
+                          setSelectedDocId(docId);
+                          pushAudit("citation_opened", `Graph → ${docId}`);
+                        }}
+                      />
+                      <div className="vault-panel p-4 flex items-start justify-center min-h-[360px] bg-black">
+                        {selectedDoc ? (
+                          <ScannedDocument doc={selectedDoc} autoScrollHighlight />
+                        ) : (
+                          <p className="text-[13px] text-white/30 uppercase tracking-[0.15em] mt-20">
+                            Select a source document · full page view
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                <div className="grid lg:grid-cols-2 gap-4">
                   <div className="vault-panel flex flex-col min-h-[500px]">
                     <div className="p-4 border-b border-white/10">
                       <p className="vault-label">Ask the plant</p>
@@ -430,6 +517,8 @@ export function VaultConsole() {
                       </p>
                     )}
                   </div>
+                </div>
+                  )}
                 </div>
               )}
 
