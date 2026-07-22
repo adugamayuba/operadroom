@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LogoMark } from "@/components/demo/LogoMark";
-import { useDemoTheme } from "@/components/demo/DemoThemeProvider";
+import { AgentPageIngest } from "@/components/vault/AgentPageIngest";
 import { ScannedDocument } from "@/components/vault/ScannedDocument";
 import { trackEvent } from "@/lib/analytics";
 import { FACILITY } from "@/lib/demo/scenarios";
@@ -33,10 +33,9 @@ interface ChatMessage {
 }
 
 function renderBold(text: string) {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
-  return parts.map((part, i) =>
+  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
     part.startsWith("**") && part.endsWith("**") ? (
-      <strong key={i} className="font-semibold">
+      <strong key={i} className="font-semibold text-white">
         {part.slice(2, -2)}
       </strong>
     ) : (
@@ -46,29 +45,21 @@ function renderBold(text: string) {
 }
 
 function VaultNav() {
-  const { theme, toggle } = useDemoTheme();
   return (
-    <header className="fixed top-0 inset-x-0 z-50 bg-[var(--demo-surface)] border-b border-[var(--demo-border)] pt-[env(safe-area-inset-top)]">
-      <div className="max-w-[1800px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2 shrink-0">
-          <LogoMark className="w-4 h-4 opacity-80" />
-          <span className="text-[13px] font-semibold tracking-wide uppercase">Operadroom Vault</span>
-          <span className="hidden sm:inline text-[10px] text-[var(--demo-muted)] border-l border-[var(--demo-border)] pl-2 ml-1 uppercase tracking-wider">
+    <header className="fixed top-0 inset-x-0 z-50 bg-black border-b border-white/10 pt-[env(safe-area-inset-top)]">
+      <div className="max-w-[1800px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <LogoMark className="w-4 h-4 text-white/80" />
+          <span className="text-[12px] font-semibold tracking-[0.35em] uppercase text-white">Vault</span>
+          <span className="hidden sm:inline text-[10px] text-white/35 border-l border-white/15 pl-2 ml-1 tracking-[0.2em] uppercase">
             Plant Memory
           </span>
         </div>
-        <div className="flex items-center gap-2 text-[11px]">
-          <span className="hidden sm:flex items-center gap-1.5 text-[var(--demo-muted)]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--demo-ok)] demo-live-pulse" />
-            Secure sandbox active
+        <div className="flex items-center gap-2 text-[10px] tracking-[0.15em] uppercase text-white/45">
+          <span className="hidden sm:flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-white demo-live-pulse" />
+            Secure sandbox
           </span>
-          <button
-            type="button"
-            onClick={toggle}
-            className="text-[11px] border border-[var(--demo-border)] px-2.5 py-1 text-[var(--demo-muted)] uppercase tracking-wider"
-          >
-            {theme === "light" ? "Dark" : "Light"}
-          </button>
         </div>
       </div>
     </header>
@@ -77,23 +68,20 @@ function VaultNav() {
 
 function AuditLedger({ events }: { events: AuditEvent[] }) {
   return (
-    <div className="demo-panel flex flex-col h-full min-h-[320px] lg:min-h-0">
-      <div className="p-3 border-b border-[var(--demo-border-subtle)]">
-        <p className="demo-label">Reelin ID · on-chain audit</p>
-        <p className="text-[10px] text-[var(--demo-muted)] mt-1">Every action sealed for cyber security review</p>
+    <div className="vault-panel flex flex-col h-full">
+      <div className="p-3 border-b border-white/10">
+        <p className="vault-label">Reelin ID · on-chain</p>
       </div>
-      <div className="flex-1 overflow-y-auto demo-scroll p-2 space-y-1.5 max-h-[280px] lg:max-h-none">
-        {events.length === 0 && (
-          <p className="text-[10px] text-[var(--demo-faint)] p-2">Audit log empty — run demo to begin</p>
-        )}
+      <div className="flex-1 overflow-y-auto demo-scroll p-2 space-y-1 max-h-[320px] lg:max-h-[calc(100vh-8rem)]">
+        {events.length === 0 && <p className="text-[10px] text-white/25 p-2">Awaiting events</p>}
         {events.map((e) => (
-          <div key={e.id} className="text-[9px] border border-[var(--demo-border-subtle)] px-2 py-1.5 font-mono">
-            <div className="flex justify-between gap-2">
-              <span className="text-[var(--demo-text)] font-medium">{AUDIT_EVENT_LABELS[e.type]}</span>
-              <span className="text-[var(--demo-faint)] shrink-0">{e.timestamp.slice(11)}</span>
+          <div key={e.id} className="text-[9px] border border-white/10 px-2 py-1.5 font-mono">
+            <div className="flex justify-between text-white/70">
+              <span>{AUDIT_EVENT_LABELS[e.type]}</span>
+              <span className="text-white/30">{e.timestamp.slice(11)}</span>
             </div>
-            <p className="text-[var(--demo-muted)] mt-0.5 truncate">{e.detail}</p>
-            <p className="text-[var(--demo-faint)] mt-0.5 truncate">{e.reelinId} · {e.blockHash}</p>
+            <p className="text-white/40 mt-0.5 truncate">{e.detail}</p>
+            <p className="text-white/25 mt-0.5 truncate">{e.reelinId}</p>
           </div>
         ))}
       </div>
@@ -102,27 +90,19 @@ function AuditLedger({ events }: { events: AuditEvent[] }) {
 }
 
 function PhaseStepper({ phase }: { phase: DemoPhase }) {
-  const steps: { id: DemoPhase; label: string }[] = [
-    { id: "intro", label: "Start" },
-    { id: "ingest", label: "Ingest" },
-    { id: "insights", label: "Insights" },
-    { id: "brain", label: "Actions" },
-    { id: "query", label: "Query" },
-  ];
-  const order = steps.map((s) => s.id);
-  const idx = order.indexOf(phase);
-
+  const steps = ["Start", "Ingest", "Insights", "Actions", "Query"];
+  const idx = ["intro", "ingest", "insights", "brain", "query"].indexOf(phase);
   return (
     <div className="flex flex-wrap gap-1">
       {steps.map((s, i) => (
-        <div
-          key={s.id}
-          className={`text-[9px] uppercase tracking-wider px-2 py-1 border ${
-            i <= idx ? "demo-field-ok" : "border-[var(--demo-border-subtle)] text-[var(--demo-faint)]"
+        <span
+          key={s}
+          className={`text-[9px] uppercase tracking-[0.18em] px-2 py-1 border ${
+            i <= idx ? "border-white text-white" : "border-white/15 text-white/25"
           }`}
         >
-          {i + 1}. {s.label}
-        </div>
+          {s}
+        </span>
       ))}
     </div>
   );
@@ -135,14 +115,16 @@ export function VaultConsole() {
   const [stageIndex, setStageIndex] = useState(0);
   const [ingestDone, setIngestDone] = useState(false);
   const [visibleInsights, setVisibleInsights] = useState(0);
+  const [extractedLabels, setExtractedLabels] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const selectedDoc = selectedDocId ? getDocument(selectedDocId) : null;
+  const currentJob = AGENT_DOC_QUEUE[docIndex];
 
   const pushAudit = useCallback((type: Parameters<typeof createAuditEvent>[0], detail: string) => {
-    setAuditEvents((prev) => [createAuditEvent(type, detail), ...prev].slice(0, 40));
+    setAuditEvents((prev) => [createAuditEvent(type, detail), ...prev].slice(0, 50));
   }, []);
 
   useEffect(() => {
@@ -155,48 +137,60 @@ export function VaultConsole() {
     setStageIndex(0);
     setIngestDone(false);
     setVisibleInsights(0);
+    setExtractedLabels([]);
     setMessages([]);
     setSelectedDocId(null);
     pushAudit("sandbox_provisioned", `${FACILITY.code} · isolated tenant · EU region`);
     trackEvent("vault_demo_start");
   };
 
-  // Ingest animation loop
   useEffect(() => {
-    if (phase !== "ingest" || ingestDone) return;
+    if (phase !== "ingest" || ingestDone || !currentJob) return;
 
-    const doc = AGENT_DOC_QUEUE[docIndex];
     const stage = AGENT_STAGES[stageIndex];
+    const doc = getDocument(currentJob.docId);
 
     const t = setTimeout(() => {
-      if (stage.id === "receive") pushAudit("page_uploaded", `${doc.name} · ${doc.pages} pg · hash sealed`);
-      if (stage.id === "index") pushAudit("page_indexed", `${doc.name} · ${doc.tags.join(", ")}`);
-      if (stage.id === "graph") pushAudit("graph_linked", `${doc.tags[0]} ↔ knowledge graph`);
-      if (stage.id === "extract") pushAudit("entity_extracted", doc.insight ?? doc.name);
+      if (stage.id === "receive") pushAudit("page_uploaded", `${currentJob.name} · hash sealed`);
+      if (stage.id === "index") pushAudit("page_indexed", `${currentJob.name} · ${currentJob.tags.join(", ")}`);
+      if (stage.id === "graph") pushAudit("graph_linked", `${currentJob.tags[0]} ↔ knowledge graph`);
+      if (stage.id === "extract" && currentJob.insight) pushAudit("entity_extracted", currentJob.insight);
+
+      if (stage.id === "tag") {
+        setExtractedLabels((prev) => [...new Set([...prev, ...currentJob.tags])]);
+      }
+      if (stage.id === "extract") {
+        const regionLabels = doc?.regions.filter((r) => r.stage === "extract").map((r) => r.label) ?? [];
+        if (currentJob.insight) regionLabels.push(currentJob.insight.slice(0, 24));
+        setExtractedLabels((prev) => [...new Set([...prev, ...regionLabels])]);
+      }
+      if (stage.id === "index") {
+        setExtractedLabels([]);
+      }
 
       if (stageIndex < AGENT_STAGES.length - 1) {
         setStageIndex((s) => s + 1);
       } else if (docIndex < AGENT_DOC_QUEUE.length - 1) {
         setDocIndex((d) => d + 1);
         setStageIndex(0);
+        setExtractedLabels([]);
       } else {
         setIngestDone(true);
         setPhase("insights");
         trackEvent("vault_demo_ingest_complete");
       }
-    }, 520);
+    }, 900);
 
     return () => clearTimeout(t);
-  }, [phase, docIndex, stageIndex, ingestDone, pushAudit]);
+  }, [phase, docIndex, stageIndex, ingestDone, currentJob, pushAudit]);
 
-  // Insights reveal
   useEffect(() => {
     if (phase !== "insights") return;
     if (visibleInsights >= AGENT_INSIGHTS.length) {
-      const t = setTimeout(() => setPhase("brain"), 1200);
+      const t = setTimeout(() => setPhase("brain"), 1000);
       return () => clearTimeout(t);
     }
-    const t = setTimeout(() => setVisibleInsights((v) => v + 1), 700);
+    const t = setTimeout(() => setVisibleInsights((v) => v + 1), 650);
     return () => clearTimeout(t);
   }, [phase, visibleInsights]);
 
@@ -209,8 +203,6 @@ export function VaultConsole() {
       const loadingId = `a-${Date.now()}`;
       setMessages((m) => [...m, userMsg, { id: loadingId, role: "assistant", text: "", loading: true }]);
       setQuery("");
-      trackEvent("vault_query", { q: trimmed.slice(0, 80) });
-
       const matched = matchVaultQuery(trimmed) ?? fallbackAnswer(trimmed);
       setTimeout(() => {
         setMessages((m) =>
@@ -227,53 +219,47 @@ export function VaultConsole() {
     [pushAudit]
   );
 
-  const currentDoc = AGENT_DOC_QUEUE[docIndex];
-  const currentStage = AGENT_STAGES[stageIndex];
-
   return (
     <>
       <VaultNav />
-      <main className="pt-14 pb-10 min-h-screen">
+      <main className="pt-14 pb-10 min-h-screen bg-black">
         <div className="max-w-[1800px] mx-auto px-4 sm:px-6">
-          <div className="grid lg:grid-cols-[1fr_280px] gap-4 items-start">
-            {/* Main demo canvas */}
+          <div className="grid lg:grid-cols-[1fr_260px] gap-5 items-start">
             <div className="min-w-0">
-              <div className="py-4 border-b border-[var(--demo-border-subtle)] flex flex-wrap gap-4 justify-between items-end">
+              <div className="py-5 border-b border-white/10 flex flex-wrap gap-4 justify-between items-end">
                 <div>
-                  <p className="demo-label">{FACILITY.name}</p>
-                  <h1 className="mt-1 text-xl font-semibold">Plant Memory</h1>
-                  <p className="mt-2 text-[13px] text-[var(--demo-muted)] max-w-2xl">
-                    Centuries of legacy records → AI agent ingests, catalogs, and builds an agentic brain — queryable in
-                    seconds, every action on-chain via Reelin ID.
+                  <p className="vault-label">{FACILITY.name}</p>
+                  <h1 className="mt-2 text-2xl font-semibold tracking-tight uppercase text-white">Plant Memory</h1>
+                  <p className="mt-2 text-[13px] text-white/50 max-w-2xl leading-relaxed">
+                    Centuries of legacy records → AI agent ingests, catalogs, and builds an agentic brain. Every action
+                    sealed on-chain via Reelin ID.
                   </p>
                 </div>
                 <PhaseStepper phase={phase} />
               </div>
 
               {phase === "intro" && (
-                <div className="mt-4 space-y-4">
-                  <div className="demo-panel p-5">
-                    <p className="demo-label">Live demo</p>
-                    <p className="text-[14px] font-medium mt-2">
-                      Watch the agent process a legacy archive batch — scan, catalog, tag, extract, graph, then act.
+                <div className="mt-6 space-y-4">
+                  <div className="vault-panel p-6">
+                    <p className="vault-label">Live demonstration</p>
+                    <p className="text-[15px] text-white mt-3 font-medium tracking-tight">
+                      Watch the agent scan, touch, and extract from real archive pages.
                     </p>
-                    <p className="text-[12px] text-[var(--demo-muted)] mt-2 max-w-xl">
-                      Simulates {AGENT_DOC_QUEUE.length} documents from a facility archive ({VAULT_CORPUS_STATS.pagesIndexed}{" "}
-                      pages indexed). After digitization, the brain resolves isolation plans, anomaly context, and
-                      compliance searches.
+                    <p className="text-[12px] text-white/45 mt-2 max-w-lg">
+                      {AGENT_DOC_QUEUE.length} documents · {VAULT_CORPUS_STATS.pagesIndexed} pages · handwritten cards,
+                      P&IDs, shift logs.
                     </p>
-                    <button type="button" onClick={startDemo} className="demo-btn-primary mt-4">
-                      Run live demo
+                    <button type="button" onClick={startDemo} className="vault-btn-primary mt-5">
+                      Initiate demo
                     </button>
                   </div>
-
-                  <div className="demo-panel p-5">
-                    <p className="demo-label">{SECURITY_COPY.headline}</p>
-                    <p className="text-[12px] text-[var(--demo-muted)] mt-2 max-w-2xl">{SECURITY_COPY.body}</p>
-                    <ul className="mt-3 grid sm:grid-cols-2 gap-2">
+                  <div className="vault-panel p-6">
+                    <p className="vault-label">{SECURITY_COPY.headline}</p>
+                    <p className="text-[12px] text-white/45 mt-2">{SECURITY_COPY.body}</p>
+                    <ul className="mt-4 grid sm:grid-cols-2 gap-2">
                       {SECURITY_COPY.bullets.map((b) => (
-                        <li key={b} className="text-[11px] flex gap-2 items-start">
-                          <span className="text-[var(--demo-ok)] shrink-0">✓</span>
+                        <li key={b} className="text-[11px] text-white/55 flex gap-2">
+                          <span className="text-white">—</span>
                           {b}
                         </li>
                       ))}
@@ -282,106 +268,24 @@ export function VaultConsole() {
                 </div>
               )}
 
-              {phase === "ingest" && (
-                <div className="mt-4 grid md:grid-cols-2 gap-4">
-                  <div className="demo-panel p-4">
-                    <p className="demo-label">Agent · document queue</p>
-                    <p className="text-[11px] text-[var(--demo-muted)] mt-1 mb-3">
-                      Processing {docIndex + 1} / {AGENT_DOC_QUEUE.length}
-                    </p>
-                    <div className="space-y-2 max-h-[340px] overflow-y-auto demo-scroll">
-                      {AGENT_DOC_QUEUE.map((d, i) => {
-                        const active = i === docIndex;
-                        const done = i < docIndex || ingestDone;
-                        return (
-                          <div
-                            key={d.id}
-                            className={`border px-3 py-2 text-[11px] ${
-                              active ? "demo-field-focus" : done ? "demo-field-ok" : "border-[var(--demo-border-subtle)] opacity-50"
-                            }`}
-                          >
-                            <p className="font-medium">{d.name}</p>
-                            <p className="text-[var(--demo-muted)] mt-0.5">
-                              {d.type} · {d.pages} pg · {d.tags.join(" · ")}
-                            </p>
-                            {active && d.insight && (
-                              <p className="mt-1 text-[10px] text-[var(--demo-focus)]">→ {d.insight}</p>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="demo-panel p-4">
-                    <p className="demo-label">Pipeline · {currentDoc?.name ?? "…"}</p>
-                    <div className="mt-3 space-y-2">
-                      {AGENT_STAGES.map((s, i) => {
-                        const done = i < stageIndex || ingestDone;
-                        const active = i === stageIndex && !ingestDone;
-                        return (
-                          <div
-                            key={s.id}
-                            className={`flex gap-3 text-[11px] border px-3 py-2 ${
-                              active ? "demo-field-focus" : done ? "demo-field-ok" : "border-[var(--demo-border-subtle)]"
-                            }`}
-                          >
-                            <span className="font-mono text-[var(--demo-faint)] w-4">{done ? "✓" : "·"}</span>
-                            <div>
-                              <p className="font-medium">{s.label}</p>
-                              <p className="text-[var(--demo-muted)]">{s.detail}</p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {currentStage && !ingestDone && (
-                      <p className="mt-3 text-[10px] animate-pulse text-[var(--demo-muted)]">
-                        Agent running {currentStage.label}…
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Mini graph */}
-                  <div className="demo-panel p-4 md:col-span-2">
-                    <p className="demo-label">Knowledge graph · live build</p>
-                    <div className="mt-3 flex flex-wrap gap-2 items-center justify-center py-4">
-                      {["P-2047", "E-1156", "V-4820", "T-8", "AM-05", "1972-WO", "P&ID-68"].map((node, i) => (
-                        <div
-                          key={node}
-                          className={`text-[10px] font-mono px-2 py-1 border transition-opacity duration-500 ${
-                            i <= docIndex + stageIndex / 2 ? "demo-field-ok opacity-100" : "opacity-20 border-[var(--demo-border-subtle)]"
-                          }`}
-                        >
-                          {node}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+              {phase === "ingest" && currentJob && (
+                <div className="mt-6">
+                  <AgentPageIngest job={currentJob} stageIndex={stageIndex} extractedLabels={extractedLabels} />
+                  <p className="mt-4 text-[10px] text-white/30 uppercase tracking-[0.2em] text-center">
+                    Document {docIndex + 1} of {AGENT_DOC_QUEUE.length}
+                  </p>
                 </div>
               )}
 
               {phase === "insights" && (
-                <div className="mt-4 demo-panel p-4">
-                  <p className="demo-label">Agent · trend & insight extraction</p>
-                  <p className="text-[11px] text-[var(--demo-muted)] mt-1 mb-4">
-                    Cross-document analysis across {VAULT_CORPUS_STATS.pagesIndexed} pages
-                  </p>
+                <div className="mt-6 vault-panel p-5">
+                  <p className="vault-label mb-4">Cross-document insights</p>
                   <div className="grid sm:grid-cols-2 gap-3">
                     {AGENT_INSIGHTS.slice(0, visibleInsights).map((ins) => (
-                      <div
-                        key={ins.id}
-                        className={`border p-3 text-[11px] demo-fade-in ${
-                          ins.severity === "critical"
-                            ? "demo-field-alert"
-                            : ins.severity === "warn"
-                              ? "demo-field-warn"
-                              : "demo-field-ok"
-                        }`}
-                      >
-                        <p className="font-medium">{ins.title}</p>
-                        <p className="text-[var(--demo-muted)] mt-1">{ins.detail}</p>
-                        <p className="font-mono text-[10px] mt-2 text-[var(--demo-faint)]">{ins.assets.join(" · ")}</p>
+                      <div key={ins.id} className="border border-white/15 p-4 vault-chip-in text-[11px]">
+                        <p className="text-white font-medium uppercase tracking-wide text-[10px]">{ins.title}</p>
+                        <p className="text-white/50 mt-2 leading-relaxed">{ins.detail}</p>
+                        <p className="font-mono text-[9px] mt-3 text-white/30">{ins.assets.join(" · ")}</p>
                       </div>
                     ))}
                   </div>
@@ -389,12 +293,11 @@ export function VaultConsole() {
               )}
 
               {phase === "brain" && (
-                <div className="mt-4 space-y-4">
-                  <div className="demo-panel p-4">
-                    <p className="demo-label">Agentic brain · what it does with the data</p>
-                    <p className="text-[12px] text-[var(--demo-muted)] mt-1 max-w-2xl">
-                      Digitization is step one. The brain solves operational problems — click any action to query the live
-                      corpus.
+                <div className="mt-6 space-y-4">
+                  <div className="vault-panel p-5">
+                    <p className="vault-label">Agentic brain · operational actions</p>
+                    <p className="text-[12px] text-white/45 mt-2">
+                      Digitization unlocks execution — select an action to query the live corpus.
                     </p>
                   </div>
                   <div className="grid sm:grid-cols-2 gap-3">
@@ -406,64 +309,55 @@ export function VaultConsole() {
                           setPhase("query");
                           submitQuery(a.prompt);
                         }}
-                        className="demo-panel p-4 text-left hover:demo-field-focus transition-colors"
+                        className="vault-panel p-5 text-left hover:border-white/40 transition-colors group"
                       >
-                        <p className="demo-label">{a.title}</p>
-                        <p className="text-[11px] text-[var(--demo-muted)] mt-2">{a.problem}</p>
-                        <p className="text-[12px] mt-2 font-medium">{a.action}</p>
-                        <p className="text-[10px] font-mono mt-2 demo-field-ok inline-block px-2 py-0.5">{a.metric}</p>
+                        <p className="vault-label group-hover:text-white">{a.title}</p>
+                        <p className="text-[11px] text-white/40 mt-2">{a.problem}</p>
+                        <p className="text-[12px] text-white/80 mt-3">{a.action}</p>
+                        <p className="text-[10px] font-mono mt-3 text-white/50 border border-white/15 inline-block px-2 py-0.5">
+                          {a.metric}
+                        </p>
                       </button>
                     ))}
                   </div>
-                  <button type="button" onClick={() => setPhase("query")} className="demo-btn-primary">
-                    Open Ask the plant →
+                  <button type="button" onClick={() => setPhase("query")} className="vault-btn-secondary">
+                    Open query interface
                   </button>
                 </div>
               )}
 
               {phase === "query" && (
-                <div className="mt-4 grid lg:grid-cols-2 gap-4">
-                  <div className="demo-panel flex flex-col min-h-[480px]">
-                    <div className="p-4 border-b border-[var(--demo-border-subtle)]">
-                      <p className="demo-label">Ask the plant</p>
-                      <p className="text-[10px] text-[var(--demo-muted)] mt-1">
-                        {VAULT_CORPUS_STATS.pagesIndexed} pages · citations · Reelin ID sealed
-                      </p>
+                <div className="mt-6 grid lg:grid-cols-2 gap-4">
+                  <div className="vault-panel flex flex-col min-h-[500px]">
+                    <div className="p-4 border-b border-white/10">
+                      <p className="vault-label">Ask the plant</p>
                     </div>
-                    <div className="flex-1 overflow-y-auto demo-scroll p-4 space-y-3 max-h-[360px]">
-                      {messages.length === 0 && (
-                        <p className="text-[12px] text-[var(--demo-faint)]">Ask about equipment, isolation, or history…</p>
-                      )}
+                    <div className="flex-1 overflow-y-auto demo-scroll p-4 space-y-3 max-h-[380px]">
                       {messages.map((msg) => (
                         <div key={msg.id} className={msg.role === "user" ? "text-right" : ""}>
                           <div
-                            className={`inline-block max-w-[95%] text-left text-[12px] px-3 py-2 ${
-                              msg.role === "user" ? "bg-[var(--demo-surface-2)] border border-[var(--demo-border)]" : "border border-[var(--demo-border-subtle)]"
+                            className={`inline-block max-w-[95%] text-left text-[12px] px-3 py-2 border ${
+                              msg.role === "user" ? "border-white/25 text-white/80" : "border-white/10 text-white/70"
                             }`}
                           >
                             {msg.loading ? (
-                              <span className="text-[var(--demo-muted)] animate-pulse">Searching archive…</span>
+                              <span className="text-white/40 animate-pulse">Searching…</span>
                             ) : (
                               <>
                                 <p className="leading-relaxed">{renderBold(msg.text)}</p>
-                                {msg.answer && msg.answer.citations.length > 0 && (
-                                  <div className="mt-2 pt-2 border-t border-[var(--demo-border-subtle)] space-y-1">
-                                    {msg.answer.citations.map((c) => (
-                                      <button
-                                        key={c.docId}
-                                        type="button"
-                                        onClick={() => {
-                                          setSelectedDocId(c.docId);
-                                          pushAudit("citation_opened", c.label);
-                                        }}
-                                        className="block w-full text-left text-[10px] px-2 py-1 border border-[var(--demo-border-subtle)] hover:demo-field-focus"
-                                      >
-                                        {c.label}
-                                      </button>
-                                    ))}
-                                    <p className="text-[9px] font-mono text-[var(--demo-faint)]">{msg.answer.reelinId}</p>
-                                  </div>
-                                )}
+                                {msg.answer?.citations.map((c) => (
+                                  <button
+                                    key={c.docId}
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedDocId(c.docId);
+                                      pushAudit("citation_opened", c.label);
+                                    }}
+                                    className="block w-full text-left text-[10px] mt-2 pt-2 border-t border-white/10 text-white/50 hover:text-white"
+                                  >
+                                    {c.label}
+                                  </button>
+                                ))}
                               </>
                             )}
                           </div>
@@ -472,7 +366,7 @@ export function VaultConsole() {
                       <div ref={chatEndRef} />
                     </div>
                     <form
-                      className="p-3 border-t border-[var(--demo-border-subtle)] flex gap-2"
+                      className="p-3 border-t border-white/10 flex gap-2"
                       onSubmit={(e) => {
                         e.preventDefault();
                         submitQuery(query);
@@ -481,24 +375,20 @@ export function VaultConsole() {
                       <input
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder="Ask the plant…"
-                        className="flex-1 border border-[var(--demo-border)] bg-[var(--demo-surface)] px-3 py-2 text-[12px]"
+                        placeholder="Query archive…"
+                        className="flex-1 bg-black border border-white/20 px-3 py-2 text-[12px] text-white placeholder:text-white/30"
                       />
-                      <button type="submit" className="demo-btn-primary shrink-0">
+                      <button type="submit" className="vault-btn-primary shrink-0">
                         Search
                       </button>
                     </form>
                   </div>
-
-                  <div className="demo-panel p-4 min-h-[480px]">
-                    <p className="demo-label">Source · AI highlight</p>
+                  <div className="vault-panel p-4 flex items-start justify-center min-h-[500px] bg-black">
                     {selectedDoc ? (
-                      <div className="mt-3">
-                        <ScannedDocument doc={selectedDoc} autoScrollHighlight />
-                      </div>
+                      <ScannedDocument doc={selectedDoc} autoScrollHighlight />
                     ) : (
-                      <p className="mt-12 text-center text-[12px] text-[var(--demo-faint)]">
-                        Citation opens scanned page with highlighted passage
+                      <p className="text-[11px] text-white/30 uppercase tracking-[0.15em] mt-20">
+                        Select citation · full page view
                       </p>
                     )}
                   </div>
@@ -506,23 +396,13 @@ export function VaultConsole() {
               )}
 
               {phase !== "intro" && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {phase !== "ingest" && (
-                    <button type="button" onClick={startDemo} className="demo-btn-secondary text-[11px]">
-                      Restart demo
-                    </button>
-                  )}
-                  {phase === "brain" && (
-                    <button type="button" onClick={() => setPhase("query")} className="demo-btn-secondary text-[11px]">
-                      Skip to query
-                    </button>
-                  )}
-                </div>
+                <button type="button" onClick={startDemo} className="vault-btn-secondary mt-6 text-[10px]">
+                  Restart demo
+                </button>
               )}
             </div>
 
-            {/* Audit sidebar */}
-            <div className="lg:sticky lg:top-[3.75rem]">
+            <div className="lg:sticky lg:top-14">
               <AuditLedger events={auditEvents} />
             </div>
           </div>

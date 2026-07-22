@@ -1,12 +1,19 @@
 import type { Metadata } from "next";
-import { Roboto_Condensed } from "next/font/google";
+import { Patrick_Hand, Roboto_Condensed } from "next/font/google";
 import { DemoThemeProvider } from "@/components/demo/DemoThemeProvider";
 import { VaultConsole } from "@/components/vault/VaultConsole";
+import "./vault.css";
 
 const vaultFont = Roboto_Condensed({
   subsets: ["latin"],
   weight: ["400", "500", "700"],
   variable: "--font-demo",
+});
+
+const handFont = Patrick_Hand({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-hand",
 });
 
 export const metadata: Metadata = {
@@ -18,7 +25,10 @@ export const metadata: Metadata = {
 
 export default function VaultPage() {
   return (
-    <div className={`${vaultFont.variable} ${vaultFont.className} demo-root`} data-demo-theme="dark">
+    <div
+      className={`${vaultFont.variable} ${handFont.variable} ${vaultFont.className} demo-root vault-root`}
+      data-demo-theme="dark"
+    >
       <DemoThemeProvider>
         <VaultConsole />
       </DemoThemeProvider>

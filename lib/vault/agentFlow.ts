@@ -2,6 +2,7 @@
 
 export interface AgentDocJob {
   id: string;
+  docId: string;
   name: string;
   type: string;
   pages: number;
@@ -12,6 +13,7 @@ export interface AgentDocJob {
 export const AGENT_DOC_QUEUE: AgentDocJob[] = [
   {
     id: "j1",
+    docId: "doc-1972-p2047",
     name: "Maintenance card · P-2047 · 1972",
     type: "Handwritten card",
     pages: 1,
@@ -20,6 +22,7 @@ export const AGENT_DOC_QUEUE: AgentDocJob[] = [
   },
   {
     id: "j2",
+    docId: "doc-pid-2047",
     name: "P&ID Sheet 2047-A · Rev 1968",
     type: "Engineering drawing",
     pages: 2,
@@ -28,6 +31,7 @@ export const AGENT_DOC_QUEUE: AgentDocJob[] = [
   },
   {
     id: "j3",
+    docId: "doc-1984-t8",
     name: "Shift log · Tank T-8 · Dec 1984",
     type: "Handwritten log",
     pages: 3,
@@ -36,6 +40,7 @@ export const AGENT_DOC_QUEUE: AgentDocJob[] = [
   },
   {
     id: "j4",
+    docId: "doc-safe-p2047",
     name: "AM-05 Safe Isolation · P-2047",
     type: "Procedure",
     pages: 4,
@@ -44,6 +49,7 @@ export const AGENT_DOC_QUEUE: AgentDocJob[] = [
   },
   {
     id: "j5",
+    docId: "doc-1988-p2047",
     name: "WO microfilm · P-2047 · 1988",
     type: "Work order",
     pages: 2,
@@ -52,6 +58,7 @@ export const AGENT_DOC_QUEUE: AgentDocJob[] = [
   },
   {
     id: "j6",
+    docId: "doc-v4820-stiction",
     name: "Field notes · V-4820 · PDF export",
     type: "Digital scan",
     pages: 1,
